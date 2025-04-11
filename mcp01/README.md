@@ -27,3 +27,9 @@ GOBIN="$HOME/go/bin" go install github.com/wyubin/ex-mcp/mcp01
 ./bin/mcp01-server -p 8081
 # 設定mcp server 時要用 `http://localhost:8081/sse`
 ```
+
+# e2e test
+可以用 mcp 的ui 來測是否符合規範 debug
+```shell
+npx @modelcontextprotocol/inspector /Users/yubin.wang/go/bin/mcp01
+```
