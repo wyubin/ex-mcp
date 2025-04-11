@@ -1,0 +1,22 @@
+{
+	"name": "llm-chat-app",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"mounts": [],
+	"forwardPorts": [],
+	"customizations":{
+		"vscode": {
+			"settings": { 
+				"gopls": {},
+				"terminal.integrated.env.linux":{
+					"GOPROXY":"https://proxy.golang.org,direct",
+					"GONOPROXY": "none;"
+				}
+			},
+			"extensions": [
+				"golang.go"
+			]
+		}
+	}
+}
