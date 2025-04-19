@@ -1,5 +1,5 @@
 {
-	"name": "llm-chat-app",
+	"name": "mcp01",
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
