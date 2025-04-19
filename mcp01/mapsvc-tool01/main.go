@@ -6,23 +6,19 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/wyubin/ex-mcp/mcp01/pkg/oteltracer"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/sdk/resource"
-	traceSdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	port     int
-	myTracer trace.Tracer
+	port int
 )
 
 func main() {
@@ -33,25 +29,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName("MyService"),
-			semconv.ServiceVersion("v0.0.1"),
-		),
-	)
+	traceProvider, err := oteltracer.GetProvider("MyService", "v0.0.1", traceExporter)
 	if err != nil {
 		panic(err)
 	}
-	traceProvider := traceSdk.NewTracerProvider(
-		traceSdk.WithBatcher(traceExporter, traceSdk.WithBatchTimeout(2*time.Second)),
-		traceSdk.WithResource(res),
-	)
 	defer func() { _ = traceProvider.Shutdown(context.Background()) }()
 	otel.SetTracerProvider(traceProvider)
 	// Create & start the tracer
-	myTracer = traceProvider.Tracer("MyService")
+	_ = traceProvider.Tracer("MyService")
 	// run svc
 	if err := run(port); err != nil {
 		panic(err)
@@ -98,16 +83,22 @@ func run(port int) error {
 	return nil
 }
 
+// if get tracer, make span
 func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	tracer := oteltracer.FromContext(ctx)
 	var span trace.Span
-	_, span = myTracer.Start(ctx, "save_name")
-	span.SetAttributes(attribute.String("environment", "testing"))
-	defer span.End()
+	if tracer != nil {
+		_, span = tracer.Start(ctx, "save_name")
+		span.SetAttributes(attribute.String("environment", "testing"))
+		defer span.End()
+	}
+
 	name, ok := request.Params.Arguments["name"].(string)
 	if !ok {
 		return mcp.NewToolResultError("name must be a string"), nil
 	}
 	uuid4, _ := uuid.NewRandom()
-	span.AddEvent("generated uuid4")
+	span.AddEvent("generated uuid4") // do nothing if span is nil
+
 	return mcp.NewToolResultText(fmt.Sprintf("name[%s] has saved as id: %s", name, uuid4)), nil
 }
