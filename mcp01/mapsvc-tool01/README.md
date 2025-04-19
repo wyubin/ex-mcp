@@ -3,7 +3,7 @@
 
 # compile
 ```shell
-go build -o bin/mcp01-server mapsvc-tool01/main.go
+go build -o bin/mcp01-server mapsvc-tool01/*.go
 
 # 也可以試著用 go install 來安裝
 GOBIN="$HOME/go/bin" go install github.com/wyubin/ex-mcp/mcp01
