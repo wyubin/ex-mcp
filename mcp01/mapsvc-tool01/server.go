@@ -31,12 +31,17 @@ func (s *Server) Init() error {
 		return err
 	}
 	s.tracerProvider = traceProvider
-	// add tools
+	// tracer
 	tracer := traceProvider.Tracer("MyService")
 	mw := oteltracer.McpMWTracer(tracer)
+	// add tools
 	s.server.AddTool(helloTool("save_name"), mw(helloHandler))
 
-	// add prompt
+	// add resources
+	s.server.AddResourceTemplate(resProfile("User Profile"), resProfileHandler)
+
+	// add prompts
+
 	return nil
 }
 
