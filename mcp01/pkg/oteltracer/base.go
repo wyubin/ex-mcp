@@ -16,13 +16,11 @@ type tracerContextKey struct{}
 
 type McpMW func(next server.ToolHandlerFunc) server.ToolHandlerFunc
 
-func McpMWEmpty(next server.ToolHandlerFunc) server.ToolHandlerFunc {
-	return next
-}
-
 func ChainMcpMW(mws ...McpMW) McpMW {
 	if len(mws) == 0 {
-		return McpMWEmpty
+		return func(next server.ToolHandlerFunc) server.ToolHandlerFunc {
+			return next
+		}
 	}
 	outer, others := mws[0], mws[1:]
 	return func(next server.ToolHandlerFunc) server.ToolHandlerFunc {

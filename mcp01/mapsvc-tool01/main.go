@@ -7,14 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/uuid"
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/wyubin/ex-mcp/mcp01/pkg/oteltracer"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -24,55 +17,27 @@ var (
 func main() {
 	flag.IntVar(&port, "p", 0, "Use SSE mode with assigned port")
 	flag.Parse()
-	// init tracer
-	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-	if err != nil {
-		panic(err)
+	s := NewServer()
+	if err := s.Init(); err != nil {
+		panic(fmt.Errorf("server init error: %v", err))
 	}
-	traceProvider, err := oteltracer.GetProvider("MyService", "v0.0.1", traceExporter)
-	if err != nil {
-		panic(err)
-	}
-	defer func() { _ = traceProvider.Shutdown(context.Background()) }()
-	otel.SetTracerProvider(traceProvider)
-	// Create & start the tracer
-	_ = traceProvider.Tracer("MyService")
+	// defer shutdown
+	defer s.CleanUp()
 	// run svc
-	if err := run(port); err != nil {
+	if err := run(s.MCPServer()); err != nil {
 		panic(err)
 	}
 }
 
-func run(port int) error {
-	// Create MCP server with explicit options
-	s := server.NewMCPServer(
-		"Demo 🚀",
-		"1.0.0",
-	)
-
-	// Add tool with more explicit configuration
-	tool := mcp.NewTool("save_name",
-		mcp.WithDescription("Save user name in storage with uuid"),
-		mcp.WithString("name",
-			mcp.Required(),
-			mcp.Description("Name of user"),
-		),
-	)
-
-	// Add tool handler
-	s.AddTool(tool, helloHandler)
-
-	// Debug information
-	log.Printf("Registered tool: save_name")
-
+func run(serv *server.MCPServer) error {
 	switch {
 	case port == 0:
-		srv := server.NewStdioServer(s)
+		srv := server.NewStdioServer(serv)
 		return srv.Listen(context.Background(), os.Stdin, os.Stdout)
 	case port > 0:
 		addr := fmt.Sprintf("localhost:%d", port)
 		log.Printf("SSE server listening on %s\n", addr)
-		srv := server.NewSSEServer(s)
+		srv := server.NewSSEServer(serv)
 
 		if err := srv.Start(addr); err != nil {
 			return fmt.Errorf("server error: %v", err)
@@ -81,24 +46,4 @@ func run(port int) error {
 		return fmt.Errorf("invalid port settings: %d", port)
 	}
 	return nil
-}
-
-// if get tracer, make span
-func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	tracer := oteltracer.FromContext(ctx)
-	var span trace.Span
-	if tracer != nil {
-		_, span = tracer.Start(ctx, "save_name")
-		span.SetAttributes(attribute.String("environment", "testing"))
-		defer span.End()
-	}
-
-	name, ok := request.Params.Arguments["name"].(string)
-	if !ok {
-		return mcp.NewToolResultError("name must be a string"), nil
-	}
-	uuid4, _ := uuid.NewRandom()
-	span.AddEvent("generated uuid4") // do nothing if span is nil
-
-	return mcp.NewToolResultText(fmt.Sprintf("name[%s] has saved as id: %s", name, uuid4)), nil
 }
