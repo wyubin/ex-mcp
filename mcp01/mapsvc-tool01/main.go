@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/wyubin/ex-mcp/mcp01/mapsvc-tool01/internal/serv"
 )
 
 var (
@@ -17,7 +18,7 @@ var (
 func main() {
 	flag.IntVar(&port, "p", 0, "Use SSE mode with assigned port")
 	flag.Parse()
-	s := NewServer()
+	s := serv.NewServer()
 	if err := s.Init(); err != nil {
 		panic(fmt.Errorf("server init error: %v", err))
 	}

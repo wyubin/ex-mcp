@@ -1,4 +1,4 @@
-package main
+package serv
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func (s *Server) Init() error {
 	s.server.AddResourceTemplate(resProfile("User Profile"), resProfileHandler)
 
 	// add prompts
-
+	s.server.AddPrompt(promptSqlQuery("sql_query_builder"), promptSqlQueryHandler)
 	return nil
 }
 

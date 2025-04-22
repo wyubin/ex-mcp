@@ -13,7 +13,7 @@ GOBIN="$HOME/go/bin" go install github.com/wyubin/ex-mcp/mcp01
 執行檔預設以 stdio 的模式執行，因此應用程式啟動後就直接從stdin 輸入
 
 ```shell
-./bin/mymcp-server
+./bin/mcp01-server
 # list tools
 {"jsonrpc": "2.0", "method": "tools/list", "params": {}, "id": 1}
 # call tool
