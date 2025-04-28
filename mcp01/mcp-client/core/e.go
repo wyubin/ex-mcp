@@ -7,4 +7,6 @@ var (
 	ErrMcpClientStart   = errors.New("start mcp client fail")
 	ErrMcpClientInit    = errors.New("init mcp client fail")
 	ErrMcpClientNoTools = errors.New("mcp has no tools")
+
+	ErrMcpHostClientNotExist = errors.New("client not exist")
 )

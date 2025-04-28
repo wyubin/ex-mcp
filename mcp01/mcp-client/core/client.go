@@ -8,10 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-const (
-	TIMEOUT_CLIENT = 5
-)
-
 // 實作 mcp client 內部的操作，主要會在跟 mcp server 互動或是輸出相關工具列表等等
 type Client struct {
 	cfg    CfgServer
@@ -20,24 +16,8 @@ type Client struct {
 
 // 以 CfgServer init 一個 mcp client(也要確認是否可運作)
 func (s *Client) Init(ctx context.Context) (*InfoServer, error) {
-	var client *mcpClient.Client
-	var err error
-	switch s.cfg.TransportType {
-	case TransportSSE:
-		client, err = mcpClient.NewSSEMCPClient(s.cfg.URL.String())
-	case TransportSTDIO:
-		client, err = mcpClient.NewStdioMCPClient(s.cfg.Command, []string{})
-	}
-	if err != nil {
-		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNew, err)
-	}
-	s.client = client
-	// start
-	if err := s.client.Start(ctx); err != nil {
-		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNew, err)
-	}
 	// init
-	result, err := client.Initialize(ctx, mcp.InitializeRequest{})
+	result, err := s.client.Initialize(ctx, mcp.InitializeRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNew, err)
 	}
@@ -51,6 +31,15 @@ func (s *Client) Init(ctx context.Context) (*InfoServer, error) {
 // Config, return CfgServer 提供外部使用(儲存)
 func (s *Client) Config() CfgServer {
 	return s.cfg
+}
+
+// 設定是否使用 mcp server, 不輸入參數預設要開啟
+func (s *Client) Enable(willEnables ...bool) {
+	if len(willEnables) == 0 {
+		s.cfg.Disabled = false
+	} else {
+		s.cfg.Disabled = !willEnables[0]
+	}
 }
 
 // 實作其他與 mcp server 的互動, 需要從 init 那邊拿到ctx, 再從裡面抽 session id 做request
@@ -76,9 +65,32 @@ func (s *Client) CallTool(ctx context.Context, name string, args map[string]inte
 	return result.Content, nil
 }
 
-func NewClient(cfg CfgServer) *Client {
-	client := Client{
-		cfg: cfg,
+// close transport
+func (s *Client) Close() error {
+	return s.client.Close()
+}
+
+// setup client as sse or stdio
+func NewClient(cfg CfgServer) (*Client, error) {
+	var client *mcpClient.Client
+	var err error
+	switch cfg.TransportType {
+	case TransportSSE:
+		client, err = mcpClient.NewSSEMCPClient(cfg.URL.String())
+	case TransportSTDIO:
+		client, err = mcpClient.NewStdioMCPClient(cfg.Command, []string{})
 	}
-	return &client
+	if err != nil {
+		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNew, err)
+	}
+	// start
+	ctx := context.Background()
+	if err := client.Start(ctx); err != nil {
+		return nil, fmt.Errorf("%w -> %s", ErrMcpClientStart, err)
+	}
+	inst := Client{
+		cfg:    cfg,
+		client: client,
+	}
+	return &inst, nil
 }
