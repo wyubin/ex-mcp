@@ -8,6 +8,7 @@
 - setClient 每次新加一個 client
 - list tools, 列出目前所有 client 的 tools(only enable), 但名稱
 - CallTool, 從指定的 <name-server>.<name-tools> 及 arg 來執行tools
+- 當 server disable 時， list tools 跟call tool 都會 raise error
 
 ## client
 - 要能夠 disable server

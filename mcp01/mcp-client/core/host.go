@@ -73,6 +73,9 @@ func (s *Host) CallTool(name string, args map[string]interface{}) ([]mcp.Content
 	if client == nil {
 		return nil, fmt.Errorf("%w -> client[%s]", ErrMcpHostClientNotExist, names[0])
 	}
+	if client.cfg.Disabled {
+		return nil, fmt.Errorf("%w -> client[%s]", ErrMcpHostClientDisabled, names[0])
+	}
 	ctx := context.Background()
 	_, err := client.Init(ctx)
 	if err != nil {

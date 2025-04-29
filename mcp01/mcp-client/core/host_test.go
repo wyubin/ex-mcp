@@ -46,4 +46,7 @@ func TestHostCallTool(t *testing.T) {
 	assert.NoError(t, err)
 	content := rawContents[0].(mcp.TextContent)
 	assert.Contains(t, content.Text, "binbinbin")
+	hostDefault.GetClient("sseTest").Enable(false)
+	_, err = hostDefault.CallTool("sseTest.save_name", args)
+	assert.ErrorIs(t, err, ErrMcpHostClientDisabled)
 }

@@ -9,4 +9,5 @@ var (
 	ErrMcpClientNoTools = errors.New("mcp has no tools")
 
 	ErrMcpHostClientNotExist = errors.New("client not exist")
+	ErrMcpHostClientDisabled = errors.New("client has been disabled")
 )
