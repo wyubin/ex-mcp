@@ -3,16 +3,15 @@ package core
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	urlCfg, _  = url.Parse("http://localhost:8081/sse")
+	urlCfg     = "http://localhost:8081/sse"
 	cfgDefault = CfgServer{
-		URL:           urlCfg,
+		Url:           urlCfg,
 		TransportType: TransportSSE,
 	}
 	clientDefault, _ = NewClient(cfgDefault)
@@ -20,7 +19,7 @@ var (
 
 func TestClientNew(t *testing.T) {
 	cfg := CfgServer{
-		URL:           urlCfg,
+		Url:           urlCfg,
 		TransportType: TransportSTDIO,
 	}
 	_, err := NewClient(cfg)

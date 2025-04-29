@@ -76,7 +76,7 @@ func NewClient(cfg CfgServer) (*Client, error) {
 	var err error
 	switch cfg.TransportType {
 	case TransportSSE:
-		client, err = mcpClient.NewSSEMCPClient(cfg.URL.String())
+		client, err = mcpClient.NewSSEMCPClient(cfg.Url)
 	case TransportSTDIO:
 		client, err = mcpClient.NewStdioMCPClient(cfg.Command, []string{})
 	}

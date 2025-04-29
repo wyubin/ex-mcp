@@ -1,8 +1,6 @@
 package core
 
 import (
-	"net/url"
-
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -23,7 +21,7 @@ type CfgServer struct {
 	Command       string            `json:"command,omitempty"` // stdio 專用
 	Args          []string          `json:"args,omitempty"`    // stdio 專用
 	Env           map[string]string `json:"env,omitempty"`     // stdio 專用
-	URL           *url.URL          `json:"url,omitempty"`     // sse 專用
+	Url           string            `json:"url,omitempty"`     // sse 專用
 	TransportType TransportType     `json:"transportType"`     // stdio 或 sse
 }
 

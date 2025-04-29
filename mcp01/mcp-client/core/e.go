@@ -10,4 +10,6 @@ var (
 
 	ErrMcpHostClientNotExist = errors.New("client not exist")
 	ErrMcpHostClientDisabled = errors.New("client has been disabled")
+
+	ErrInValidCfgServers = errors.New("not valid config")
 )
