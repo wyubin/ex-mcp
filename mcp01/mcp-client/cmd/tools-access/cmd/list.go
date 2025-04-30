@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -10,10 +11,10 @@ import (
 )
 
 var (
-	listProc *ListProc = NewListAdd()
+	listProc *ListProc = NewListProc()
 	listCmd            = &cobra.Command{
-		Use:   "add-sample [flags] pathVcf [...pathVcf]",
-		Short: "add sample - AF data from VCF file",
+		Use:   "list [flags] pathConfig",
+		Short: "list - list tools usage based servers in config",
 		Long:  ``,
 		Run:   listProc.run,
 	}
@@ -56,9 +57,10 @@ func (s *ListProc) run(ccmd *cobra.Command, args []string) {
 		log.Logger.Error("no tool exist")
 		os.Exit(1)
 	}
-	fmt.Printf("tools: %+v\n", tools)
+	byteTools, _ := json.Marshal(tools)
+	fmt.Fprintf(os.Stdout, "%s\n", byteTools)
 }
 
-func NewListAdd() *ListProc {
+func NewListProc() *ListProc {
 	return &ListProc{}
 }

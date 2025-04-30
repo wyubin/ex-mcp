@@ -32,8 +32,9 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
+	// add subcmd
 	ctlCmd.AddCommand(listCmd)
+	ctlCmd.AddCommand(callCmd)
 }
 
 func initConfig() {
