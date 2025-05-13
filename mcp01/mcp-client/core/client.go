@@ -78,7 +78,11 @@ func NewClient(cfg CfgServer) (*Client, error) {
 	case TransportSSE:
 		client, err = mcpClient.NewSSEMCPClient(cfg.Url)
 	case TransportSTDIO:
-		client, err = mcpClient.NewStdioMCPClient(cfg.Command, []string{})
+		envs := []string{}
+		for k, v := range cfg.Env {
+			envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+		}
+		client, err = mcpClient.NewStdioMCPClient(cfg.Command, envs, cfg.Args...)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNew, err)

@@ -13,20 +13,20 @@ var (
 )
 
 func TestHostSetClient(t *testing.T) {
-	err := hostDefault.SetClient("sseTest", cfgDefault)
+	err := hostDefault.SetClient("sseTest", cfgSSE)
 	assert.NoError(t, err, "TestHostSetClient")
 }
 
 func TestHostGetClient(t *testing.T) {
-	hostDefault.SetClient("sseTest", cfgDefault)
+	hostDefault.SetClient("sseTest", cfgSSE)
 	client := hostDefault.GetClient("stdio")
 	assert.True(t, client == nil)
 	client = hostDefault.GetClient("sseTest")
-	assert.Equal(t, cfgDefault, client.Config())
+	assert.Equal(t, cfgSSE, client.Config())
 }
 
 func TestHostListTools(t *testing.T) {
-	hostDefault.SetClient("sseTest", cfgDefault)
+	hostDefault.SetClient("sseTest", cfgSSE)
 	tools, err := hostDefault.ListTools()
 	assert.NoError(t, err)
 	idx := slices.IndexFunc(tools, func(x mcp.Tool) bool { return x.Name == "sseTest.save_name" })
@@ -34,7 +34,7 @@ func TestHostListTools(t *testing.T) {
 }
 
 func TestHostCallTool(t *testing.T) {
-	hostDefault.SetClient("sseTest", cfgDefault)
+	hostDefault.SetClient("sseTest", cfgSSE)
 	args := map[string]interface{}{
 		"name": "binbinbin",
 	}

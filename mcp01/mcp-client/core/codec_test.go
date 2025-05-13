@@ -13,7 +13,7 @@ var (
 
 func TestCfgCodec(t *testing.T) {
 	cfgServers := CfgServers{
-		"sseTest": cfgDefault,
+		"sseTest": cfgSSE,
 	}
 	byteConfig, err := codecDefault.Encode(&cfgServers)
 	assert.NoError(t, err, "TestCfgCodec - Encode")

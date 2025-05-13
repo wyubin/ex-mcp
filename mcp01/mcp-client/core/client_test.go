@@ -5,18 +5,24 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/wyubin/ex-mcp/mcp01/utils/testtool"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	urlCfg     = "http://localhost:8081/sse"
-	cfgDefault = CfgServer{
+	urlCfg = "http://localhost:8081/sse"
+	cfgSSE = CfgServer{
 		Url:           urlCfg,
 		TransportType: TransportSSE,
 	}
-	clientDefault, _ = NewClient(cfgDefault)
+	cfgStdio = CfgServer{
+		Command:       "/workspaces/ex-mcp/mcp01/bin/mcp01-server",
+		Env:           map[string]string{},
+		Args:          []string{},
+		TransportType: TransportSTDIO,
+	}
 )
 
 func TestClientNew(t *testing.T) {
@@ -24,6 +30,7 @@ func TestClientNew(t *testing.T) {
 		Url:           urlCfg,
 		TransportType: TransportSTDIO,
 	}
+	// fail case
 	caseA := testtool.AssertCase{ErrorExpect: ErrMcpClientNew}
 	_, caseA.ErrorActual = NewClient(cfg)
 	caseA.Assert(t, nil)
@@ -37,44 +44,85 @@ func TestClientNew(t *testing.T) {
 }
 
 func TestClientInit(t *testing.T) {
-	ctx := context.Background()
-	info, err := clientDefault.Init(ctx)
-	assert.NoError(t, err, "TestFClientInit")
+	caseSSE := testtool.AssertCase{Description: "TestFClientInit - SSE"}
+	clientSSE, _ := NewClient(cfgSSE)
+	var info *InfoServer
+	info, caseSSE.ErrorActual = clientSSE.Init(context.Background())
+	caseSSE.Assert(t, nil)
+	defer clientSSE.Close()
+	fmt.Printf("info: %+v\n", *info)
+	// stdio
+	caseStdio := testtool.AssertCase{Description: "TestFClientInit - stdio"}
+	clientStdio, _ := NewClient(cfgStdio)
+	info, caseStdio.ErrorActual = clientStdio.Init(context.Background())
+	caseStdio.Assert(t, nil)
+	defer clientStdio.Close()
 	fmt.Printf("info: %+v\n", *info)
 }
 
 func TestClientListTools(t *testing.T) {
+	caseSSE := testtool.AssertCase{A: "save_name", Description: "ClientListTools - SSE"}
+	clientSSE, _ := NewClient(cfgSSE)
 	ctx := context.Background()
-	clientDefault.Init(ctx)
-	tools, err := clientDefault.ListTools(ctx)
-	assert.NoError(t, err, "TestFClientListTools")
-	fmt.Printf("tools: %+v\n", tools)
+	clientSSE.Init(ctx)
+	var tools []mcp.Tool
+	tools, caseSSE.ErrorActual = clientSSE.ListTools(ctx)
+	caseSSE.B = tools[0].Name
+	caseSSE.Assert(t, assert.Equal)
+	defer clientSSE.Close()
+
+	// stdio
+	caseStdio := testtool.AssertCase{A: "save_name", Description: "ClientListTools - stdio"}
+	clientStdio, _ := NewClient(cfgStdio)
+	ctx = context.Background()
+	clientStdio.Init(ctx)
+	tools, caseStdio.ErrorActual = clientStdio.ListTools(ctx)
+	caseStdio.B = tools[0].Name
+	caseStdio.Assert(t, assert.Equal)
+	defer clientStdio.Close()
 }
 
 func TestClientCallTool(t *testing.T) {
+	// sse
+	caseSSE := testtool.AssertCase{Description: "ClientCallTool - SSE"}
 	ctx := context.Background()
-	clientDefault.Init(ctx)
+	clientSSE, _ := NewClient(cfgSSE)
+	clientSSE.Init(ctx)
 	args := map[string]interface{}{
 		"name": "binbinbin",
 	}
-	contents, err := clientDefault.CallTool(ctx, "save_name", args)
-	assert.NoError(t, err, "TestClientCallTool")
+	caseSSE.B = "binbinbin"
+	var contents []mcp.Content
+	contents, caseSSE.ErrorActual = clientSSE.CallTool(ctx, "save_name", args)
+	caseSSE.A = contents[0].(mcp.TextContent).Text
+	caseSSE.Assert(t, assert.Contains)
+	fmt.Printf("contents: %+v\n", contents)
+	// stdio
+	caseStdio := testtool.AssertCase{Description: "ClientCallTool - stdio"}
+	ctx = context.Background()
+	clientStdio, _ := NewClient(cfgStdio)
+	clientStdio.Init(ctx)
+	caseStdio.B = "binbinbin"
+	contents, caseStdio.ErrorActual = clientStdio.CallTool(ctx, "save_name", args)
+	caseStdio.A = contents[0].(mcp.TextContent).Text
+	caseStdio.Assert(t, assert.Contains)
 	fmt.Printf("contents: %+v\n", contents)
 }
 
 func TestClientEnable(t *testing.T) {
+	clientSSE, _ := NewClient(cfgSSE)
 	// client 預設開啟
-	testtool.AssertCase{A: false, B: clientDefault.cfg.Disabled,
+	testtool.AssertCase{A: false, B: clientSSE.cfg.Disabled,
 		Description: "TestClientEnable - default",
 	}.Assert(t, assert.Equal)
 	// disable
-	clientDefault.Enable(false)
-	testtool.AssertCase{A: true, B: clientDefault.cfg.Disabled,
+	clientSSE.Enable(false)
+	testtool.AssertCase{A: true, B: clientSSE.cfg.Disabled,
 		Description: "TestClientEnable - disable",
 	}.Assert(t, assert.Equal)
 	// enable
-	clientDefault.Enable(true)
-	testtool.AssertCase{A: false, B: clientDefault.cfg.Disabled,
+	clientSSE.Enable(true)
+	testtool.AssertCase{A: false, B: clientSSE.cfg.Disabled,
 		Description: "TestClientEnable - disable",
 	}.Assert(t, assert.Equal)
 }
