@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/wyubin/ex-mcp/mcp01/utils/testtool"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,12 +24,15 @@ func TestClientNew(t *testing.T) {
 		Url:           urlCfg,
 		TransportType: TransportSTDIO,
 	}
-	_, err := NewClient(cfg)
-	fmt.Printf("error: %s\n", err)
-	assert.Error(t, err, "TestClientNew")
+	caseA := testtool.AssertCase{ErrorExpect: ErrMcpClientNew}
+	_, caseA.ErrorActual = NewClient(cfg)
+	caseA.Assert(t, nil)
+	// caseB
+	caseB := testtool.AssertCase{}
 	cfg.TransportType = TransportSSE
-	client, err := NewClient(cfg)
-	assert.NoError(t, err, "TestClientNew")
+	var client *Client
+	client, caseB.ErrorActual = NewClient(cfg)
+	caseB.Assert(t, nil)
 	defer client.Close()
 }
 
@@ -59,9 +64,17 @@ func TestClientCallTool(t *testing.T) {
 
 func TestClientEnable(t *testing.T) {
 	// client 預設開啟
-	assert.False(t, clientDefault.cfg.Disabled, "TestClientEnable - before")
+	testtool.AssertCase{A: false, B: clientDefault.cfg.Disabled,
+		Description: "TestClientEnable - default",
+	}.Assert(t, assert.Equal)
+	// disable
 	clientDefault.Enable(false)
-	assert.True(t, clientDefault.cfg.Disabled, "TestClientEnable - disable")
+	testtool.AssertCase{A: true, B: clientDefault.cfg.Disabled,
+		Description: "TestClientEnable - disable",
+	}.Assert(t, assert.Equal)
+	// enable
 	clientDefault.Enable(true)
-	assert.False(t, clientDefault.cfg.Disabled, "TestClientEnable - enable")
+	testtool.AssertCase{A: false, B: clientDefault.cfg.Disabled,
+		Description: "TestClientEnable - disable",
+	}.Assert(t, assert.Equal)
 }
