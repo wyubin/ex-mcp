@@ -1,0 +1,6 @@
+bin
+tmp
+
+# no go mod files
+go.mod
+go.sum
