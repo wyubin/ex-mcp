@@ -61,6 +61,8 @@ func wsHandler(c *gin.Context) {
 			break
 		}
 	}
+	// c.JSON will error
+	// c.JSON(http.StatusBadRequest, "WsStreamTranscriptions finish")
 }
 
 func main() {

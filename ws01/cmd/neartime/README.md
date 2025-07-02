@@ -16,5 +16,5 @@ go run server/main.go
 go run client/main.go -session=abc123 -file=/workspaces/ex-mcp/ws01/tmp/test-5.pcm -host=localhost:8080
 
 # run asura client
-go run asura-client/main.go -token=W8eDsvxL0hR7I94yK7BFs -file=/workspaces/ex-mcp/ws01/tmp/recording2.pcm -host=fedgpt-dev.corp.ailabs.tw
+go run asura-client/main.go -token=v4fgzPe0B3-LNi9Qd90M1 -file=/workspaces/ex-mcp/ws01/tmp/recording2.pcm -host=fedgpt-dev.corp.ailabs.tw
 ```

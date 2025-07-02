@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -53,11 +54,18 @@ func main() {
 	log.Printf("Start streaming %s to %s with session ID %s", *filePath, *host, *sessionID)
 
 	// 讀取 server 傳來的訊息
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		for {
 			opCode, message, err := conn.Read(ctx)
 			if err != nil {
-				log.Println("read error:", err)
+				if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+					log.Println("complete transcriptions...")
+				} else {
+					log.Println("read error:", err)
+				}
+				wg.Done()
 				return
 			}
 			log.Printf("recv[code:%d]: %s", opCode, message)
@@ -80,7 +88,9 @@ func main() {
 	}
 
 	log.Println("Client finished sending audio.")
+	log.Println("Wait for transcriptions response...")
+	wg.Wait()
+	log.Println("Close websocket...")
 	conn.Close(websocket.StatusNormalClosure, "done")
-	time.Sleep(20 * time.Second)
 
 }
