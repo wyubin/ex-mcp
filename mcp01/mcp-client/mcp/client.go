@@ -1,4 +1,4 @@
-package core
+package mcp
 
 import (
 	"context"
@@ -63,6 +63,29 @@ func (s *Client) CallTool(ctx context.Context, name string, args map[string]inte
 	}
 
 	return result.Content, nil
+}
+
+// ListPrompts
+func (s *Client) ListPrompts(ctx context.Context) ([]mcp.Prompt, error) {
+	toolListResult, err := s.client.ListPrompts(ctx, mcp.ListPromptsRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%w -> %s", ErrMcpClientNoPrompts, err)
+	}
+	return toolListResult.Prompts, nil
+}
+
+// GetPrompt
+func (s *Client) GetPrompt(ctx context.Context, name string, args map[string]string) (*mcp.GetPromptResult, error) {
+	request := mcp.GetPromptRequest{}
+	request.Params.Name = name
+	request.Params.Arguments = args
+
+	result, err := s.client.GetPrompt(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // close transport

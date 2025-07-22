@@ -6,7 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
-	"github.com/wyubin/ex-mcp/mcp01/mcp-client/core"
+	mcp1 "github.com/wyubin/ex-mcp/mcp01/mcp-client/mcp"
 	"github.com/wyubin/ex-mcp/mcp01/utils/customflag"
 	"github.com/wyubin/ex-mcp/mcp01/utils/log"
 )
@@ -36,15 +36,15 @@ func (s *CallProc) run(ccmd *cobra.Command, args []string) {
 		log.Logger.Error(fmt.Sprintf("config not accessible: %s", err.Error()))
 		os.Exit(1)
 	}
-	codec := core.NewCfgCodec()
-	var cfgServers core.CfgServers
+	codec := mcp1.NewCfgCodec()
+	var cfgServers mcp1.CfgServers
 	err = codec.Decode(byteConfig, &cfgServers)
 	if err != nil {
 		log.Logger.Error(err.Error())
 		os.Exit(1)
 	}
 	// init host
-	host := core.NewHost()
+	host := mcp1.NewHost()
 	for nameServ, cfgServ := range cfgServers {
 		err = host.SetClient(nameServ, cfgServ)
 		if err != nil {

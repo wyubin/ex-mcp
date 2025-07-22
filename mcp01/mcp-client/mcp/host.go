@@ -1,4 +1,4 @@
-package core
+package mcp
 
 import (
 	"context"
@@ -39,14 +39,13 @@ func (s *Host) GetClient(name string) *Client {
 }
 
 // ListTools
-func (s *Host) ListTools() ([]mcp.Tool, error) {
+func (s *Host) ListTools(ctx context.Context) ([]mcp.Tool, error) {
 	toolsAll := []mcp.Tool{}
 	errs := []error{}
 	for name, client := range s.clients {
 		if client.cfg.Disabled {
 			continue
 		}
-		ctx := context.Background()
 		_, err := client.Init(ctx)
 		if err != nil {
 			errs = append(errs, err)
@@ -66,7 +65,7 @@ func (s *Host) ListTools() ([]mcp.Tool, error) {
 }
 
 // CallTool
-func (s *Host) CallTool(name string, args map[string]interface{}) ([]mcp.Content, error) {
+func (s *Host) CallTool(ctx context.Context, name string, args map[string]interface{}) ([]mcp.Content, error) {
 	names := strings.SplitN(name, ".", 2)
 	// check nameServer exists
 	client := s.GetClient(names[0])
@@ -76,7 +75,6 @@ func (s *Host) CallTool(name string, args map[string]interface{}) ([]mcp.Content
 	if client.cfg.Disabled {
 		return nil, fmt.Errorf("%w -> client[%s]", ErrMcpHostClientDisabled, names[0])
 	}
-	ctx := context.Background()
 	_, err := client.Init(ctx)
 	if err != nil {
 		return nil, err
