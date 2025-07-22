@@ -29,14 +29,7 @@ func promptSqlQueryHandler(ctx context.Context, request mcp.GetPromptRequest) (*
 		[]mcp.PromptMessage{
 			mcp.NewPromptMessage(
 				mcp.RoleAssistant,
-				mcp.NewTextContent("You are a SQL expert. Help construct efficient and safe queries."),
-			),
-			mcp.NewPromptMessage(
-				mcp.RoleAssistant,
-				mcp.NewEmbeddedResource(mcp.BlobResourceContents{
-					URI:      fmt.Sprintf("db://schema/%s", tableName),
-					MIMEType: "application/json",
-				}),
+				mcp.NewTextContent(fmt.Sprintf("You are a SQL expert. Help construct efficient and safe queries for table[%s]", tableName)),
 			),
 		},
 	), nil

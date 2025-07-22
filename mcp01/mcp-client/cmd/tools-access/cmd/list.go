@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/wyubin/ex-mcp/mcp01/mcp-client/core"
+	"github.com/wyubin/ex-mcp/mcp01/mcp-client/mcp"
 	"github.com/wyubin/ex-mcp/mcp01/utils/log"
 )
 
@@ -33,15 +33,15 @@ func (s *ListProc) run(ccmd *cobra.Command, args []string) {
 		log.Logger.Error(fmt.Sprintf("config not accessible: %s", err.Error()))
 		os.Exit(1)
 	}
-	codec := core.NewCfgCodec()
-	var cfgServers core.CfgServers
+	codec := mcp.NewCfgCodec()
+	var cfgServers mcp.CfgServers
 	err = codec.Decode(byteConfig, &cfgServers)
 	if err != nil {
 		log.Logger.Error(err.Error())
 		os.Exit(1)
 	}
 	// init host
-	host := core.NewHost()
+	host := mcp.NewHost()
 	for nameServ, cfgServ := range cfgServers {
 		err = host.SetClient(nameServ, cfgServ)
 		if err != nil {

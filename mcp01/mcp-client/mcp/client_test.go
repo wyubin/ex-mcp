@@ -1,4 +1,4 @@
-package core
+package mcp
 
 import (
 	"context"
@@ -80,6 +80,26 @@ func TestClientListTools(t *testing.T) {
 	caseStdio.B = tools[0].Name
 	caseStdio.Assert(t, assert.Equal)
 	defer clientStdio.Close()
+}
+
+func TestClientListPrompts(t *testing.T) {
+	caseSSE := testtool.AssertCase{A: "sql_query_builder", Description: "ClientListPrompts - SSE"}
+	clientSSE, _ := NewClient(cfgSSE)
+	ctx := context.Background()
+	clientSSE.Init(ctx)
+	var prompts []mcp.Prompt
+	prompts, caseSSE.ErrorActual = clientSSE.ListPrompts(ctx)
+	fmt.Printf("prompts: %+v\n", prompts)
+
+	// get prompt
+	msgs, err := clientSSE.GetPrompt(ctx, "sql_query_builder", map[string]string{"table": "users"})
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("msgs: %+v\n", msgs)
+	caseSSE.B = prompts[0].Name
+	caseSSE.Assert(t, assert.Equal)
+	defer clientSSE.Close()
 }
 
 func TestClientCallTool(t *testing.T) {

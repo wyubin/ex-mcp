@@ -1,6 +1,7 @@
-package core
+package mcp
 
 import (
+	"context"
 	"slices"
 	"testing"
 
@@ -27,7 +28,7 @@ func TestHostGetClient(t *testing.T) {
 
 func TestHostListTools(t *testing.T) {
 	hostDefault.SetClient("sseTest", cfgSSE)
-	tools, err := hostDefault.ListTools()
+	tools, err := hostDefault.ListTools(context.Background())
 	assert.NoError(t, err)
 	idx := slices.IndexFunc(tools, func(x mcp.Tool) bool { return x.Name == "sseTest.save_name" })
 	assert.NotEqual(t, -1, idx, "TestHostListTools")
@@ -38,15 +39,15 @@ func TestHostCallTool(t *testing.T) {
 	args := map[string]interface{}{
 		"name": "binbinbin",
 	}
-	_, err := hostDefault.CallTool("sse.save_name", nil)
+	_, err := hostDefault.CallTool(context.Background(), "sse.save_name", nil)
 	assert.ErrorIs(t, err, ErrMcpHostClientNotExist)
-	_, err = hostDefault.CallTool("sseTest.save_world", nil)
+	_, err = hostDefault.CallTool(context.Background(), "sseTest.save_world", nil)
 	assert.Error(t, err)
-	rawContents, err := hostDefault.CallTool("sseTest.save_name", args)
+	rawContents, err := hostDefault.CallTool(context.Background(), "sseTest.save_name", args)
 	assert.NoError(t, err)
 	content := rawContents[0].(mcp.TextContent)
 	assert.Contains(t, content.Text, "binbinbin")
 	hostDefault.GetClient("sseTest").Enable(false)
-	_, err = hostDefault.CallTool("sseTest.save_name", args)
+	_, err = hostDefault.CallTool(context.Background(), "sseTest.save_name", args)
 	assert.ErrorIs(t, err, ErrMcpHostClientDisabled)
 }
