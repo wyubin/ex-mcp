@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -52,7 +53,7 @@ func (s *CallProc) run(ccmd *cobra.Command, args []string) {
 		}
 	}
 	// call tool
-	rawContents, err := host.CallTool(nameTool, params)
+	rawContents, err := host.CallTool(context.Background(), nameTool, params)
 	if err != nil {
 		log.Logger.Error(err.Error())
 		os.Exit(1)

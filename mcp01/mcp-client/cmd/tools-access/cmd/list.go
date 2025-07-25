@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -48,7 +49,7 @@ func (s *ListProc) run(ccmd *cobra.Command, args []string) {
 			log.Logger.Warn(err.Error())
 		}
 	}
-	tools, err := host.ListTools()
+	tools, err := host.ListTools(context.Background())
 	if err != nil {
 		log.Logger.Error(err.Error())
 		os.Exit(1)
