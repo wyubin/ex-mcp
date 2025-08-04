@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "gen/user/v1;userv1";
+
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+
+// 使用者物件
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+// 建立使用者
+message CreateUserRequest {
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+  string email = 2 [(validate.rules).string = {email: true}];
+}
+message CreateUserResponse {
+  User user = 1;
+}
+
+// 取得使用者
+message GetUserRequest {
+  string id = 1 [(validate.rules).string = {min_len: 1}];
+}
+message GetUserResponse {
+  User user = 1;
+}
+
+// 列出所有使用者
+message ListUsersRequest {}
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+// 刪除使用者
+message DeleteUserRequest {
+  string id = 1 [(validate.rules).string = {min_len: 1}];
+}
+message DeleteUserResponse {}
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/user"
+      body: "*"
+    };
+  }
+
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/v1/user/{id}"
+    };
+  }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/user"
+    };
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete: "/v1/user/{id}"
+    };
+  }
+}

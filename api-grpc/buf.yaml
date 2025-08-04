@@ -1,0 +1,11 @@
+version: v2
+modules:
+  - path: src/proto
+deps:
+  - buf.build/bufbuild/protovalidate:v0.10.4
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_VERSION_SUFFIX
