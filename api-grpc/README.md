@@ -6,9 +6,9 @@
 ```shell
 # 安裝相關 protoc plugin
 go install github.com/bufbuild/protovalidate-go/cmd/protoc-gen-validate@latest
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+# go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
+go get github.com/grpc-ecosystem/grpc-gateway/v2@v2.27.1
 # 安裝 buf
 BIN="/usr/local/bin" && \
 VERSION="1.56.0" && \
@@ -18,7 +18,7 @@ curl -sSL \
 chmod +x "${BIN}/buf"
 
 # 下載 buf 相關模組
-buf mod update
+buf dep update
 buf generate
 ```
 
