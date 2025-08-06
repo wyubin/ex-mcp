@@ -19,9 +19,11 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// create svc
+	userSvc := svc.NewUserService()
+
 	// 建立 gRPC server
 	grpcServer := grpc.NewServer()
-	userSvc := svc.NewUserService()
 	userv1.RegisterUserServiceServer(grpcServer, userSvc)
 
 	// 啟動 gRPC server（port: 50051）
@@ -39,15 +41,21 @@ func main() {
 	// 建立 gRPC-Gateway mux
 	mux := runtime.NewServeMux()
 
-	// 使用 RegisterHandlerServer（避免建立 grpc client）
+	// 使用 RegisterHandlerServer（避免建立 grpc client, 內部會建立 grpc server）
 	err := userv1.RegisterUserServiceHandlerServer(ctx, mux, userSvc)
 	if err != nil {
 		log.Fatalf("failed to register gRPC-Gateway handler: %v", err)
 	}
 
+	// 如果是要直接call 另一個 runtime 的 grpc, 要用 RegisterUserServiceHandlerFromEndpoint
+
+	// 包一層 /api router
+	httpMux := http.NewServeMux()
+	httpMux.Handle("/api/", http.StripPrefix("/api", mux))
+
 	// 啟動 HTTP Gateway server（port: 8080）
 	log.Println("🌐 HTTP Gateway listening on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8080", httpMux); err != nil {
 		log.Fatalf("failed to serve HTTP: %v", err)
 	}
 }
