@@ -1,0 +1,61 @@
+swagger: "2.0"
+info:
+  title: user/v1/crud.proto
+  version: version not set
+tags:
+  - name: UserService
+consumes:
+  - application/json
+produces:
+  - application/json
+paths: {}
+definitions:
+  protobufAny:
+    type: object
+    properties:
+      '@type':
+        type: string
+    additionalProperties: {}
+  rpcStatus:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/protobufAny'
+  userCreateUserResponse:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/userUser'
+  userDeleteUserResponse:
+    type: object
+  userGetUserResponse:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/userUser'
+  userListUsersResponse:
+    type: object
+    properties:
+      users:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/userUser'
+  userUser:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      email:
+        type: string
+    title: 使用者物件

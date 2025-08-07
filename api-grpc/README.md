@@ -22,3 +22,8 @@ buf dep update
 buf generate
 ```
 
+# buf
+- buf.gen.yaml 中 plugins 的設定可以直接去看 remote 的 src code, opt 下面通常會是 plugins 的 main 的 flags
+
+# swagger
+需要考慮如何從 proto 到產生swagger json 的流程

@@ -458,15 +458,14 @@ const file_user_v1_crud_proto_rawDesc = "" +
 	".user.UserR\x05users\",\n" +
 	"\x11DeleteUserRequest\x12\x17\n" +
 	"\x02id\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x02id\"\x14\n" +
-	"\x12DeleteUserResponse2\xda\x02\n" +
-	"\vUserService\x12T\n" +
+	"\x12DeleteUserResponse2\x85\x02\n" +
+	"\vUserService\x12?\n" +
 	"\n" +
-	"CreateUser\x12\x17.user.CreateUserRequest\x1a\x18.user.CreateUserResponse\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/user\x12M\n" +
-	"\aGetUser\x12\x14.user.GetUserRequest\x1a\x15.user.GetUserResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/v1/user/{id}\x12N\n" +
-	"\tListUsers\x12\x16.user.ListUsersRequest\x1a\x17.user.ListUsersResponse\"\x10\x82\xd3\xe4\x93\x02\n" +
-	"\x12\b/v1/user\x12V\n" +
+	"CreateUser\x12\x17.user.CreateUserRequest\x1a\x18.user.CreateUserResponse\x126\n" +
+	"\aGetUser\x12\x14.user.GetUserRequest\x1a\x15.user.GetUserResponse\x12<\n" +
+	"\tListUsers\x12\x16.user.ListUsersRequest\x1a\x17.user.ListUsersResponse\x12?\n" +
 	"\n" +
-	"DeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponse\"\x15\x82\xd3\xe4\x93\x02\x0f*\r/v1/user/{id}B5Z3github.com/wyubin/ex-mcp/api-grpc/src/gen/user;userb\x06proto3"
+	"DeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponseB8Z6github.com/wyubin/ex-mcp/api-grpc/src/gen/user/v1;userb\x06proto3"
 
 var (
 	file_user_v1_crud_proto_rawDescOnce sync.Once
