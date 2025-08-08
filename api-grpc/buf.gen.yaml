@@ -26,3 +26,6 @@ plugins:
     out: src/gen
     opt:
       - output_format=yaml
+      - generate_unbound_methods=true
+      - allow_merge=true
+      - merge_file_name=api

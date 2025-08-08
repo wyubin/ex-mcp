@@ -1,0 +1,164 @@
+swagger: "2.0"
+info:
+  title: user/v1/crud.proto
+  version: version not set
+tags:
+  - name: UserService
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /user.UserService/CreateUser:
+    post:
+      operationId: UserService_CreateUser
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/userCreateUserResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/userCreateUserRequest'
+      tags:
+        - UserService
+  /user.UserService/DeleteUser:
+    post:
+      operationId: UserService_DeleteUser
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/userDeleteUserResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/userDeleteUserRequest'
+      tags:
+        - UserService
+  /user.UserService/GetUser:
+    post:
+      operationId: UserService_GetUser
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/userGetUserResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/userGetUserRequest'
+      tags:
+        - UserService
+  /user.UserService/ListUsers:
+    post:
+      operationId: UserService_ListUsers
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/userListUsersResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/userListUsersRequest'
+      tags:
+        - UserService
+definitions:
+  protobufAny:
+    type: object
+    properties:
+      '@type':
+        type: string
+    additionalProperties: {}
+  rpcStatus:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/protobufAny'
+  userCreateUserRequest:
+    type: object
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+    title: 建立使用者
+  userCreateUserResponse:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/userUser'
+  userDeleteUserRequest:
+    type: object
+    properties:
+      id:
+        type: string
+    title: 刪除使用者
+  userDeleteUserResponse:
+    type: object
+  userGetUserRequest:
+    type: object
+    properties:
+      id:
+        type: string
+    title: 取得使用者
+  userGetUserResponse:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/userUser'
+  userListUsersRequest:
+    type: object
+    title: 列出所有使用者
+  userListUsersResponse:
+    type: object
+    properties:
+      users:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/userUser'
+  userUser:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      email:
+        type: string
+    title: 使用者物件

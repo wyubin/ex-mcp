@@ -10,7 +10,10 @@
 
 # gateway
 `buf.build/grpc-ecosystem/gateway` 會建立 *.pb.gw.go, 提供 RegisterUserServiceHandlerServer, 可以把 implSvc 跟 gateway route 接在一起，之後這個route 可以再往上接到 main http route
-- `RegisterUserServiceHandlerServer` 並沒有另外建立 grpc client 再打 grpc server, 
+- `RegisterUserServiceHandlerServer` 並沒有另外建立 grpc client 再打 grpc server, 而是在 init 時直接 new 一個 grpc server instance 把 request 轉換後打過去
+
+# swagger
+
 
 # connect-go
 - Pros:

@@ -9,6 +9,10 @@ go install github.com/bufbuild/protovalidate-go/cmd/protoc-gen-validate@latest
 # go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go get github.com/grpc-ecosystem/grpc-gateway/v2@v2.27.1
+
+# 下載 swagger cli 進行 generate api yaml
+go install github.com/swaggo/swag/cmd/swag@latest
+
 # 安裝 buf
 BIN="/usr/local/bin" && \
 VERSION="1.56.0" && \
@@ -27,3 +31,14 @@ buf generate
 
 # swagger
 需要考慮如何從 proto 到產生swagger json 的流程
+
+# build
+```shell
+DESTDIR=/var/local NAME=user make svc
+```
+
+# test
+```shell
+/var/local/apisvc
+# swagger: http://localhost:8080/static/docs.html
+```

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="SwaggerUI" />
+  <title>SwaggerUI</title>
+  <link rel="stylesheet" href="./swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="./swagger-ui-bundle.js" crossorigin></script>
+<script>
+  const UrlMutatorPlugin = (system) => ({
+  rootInjects: {
+    setScheme: (scheme) => {
+      const jsonSpec = system.getState().toJSON().spec.json;
+      const schemes = Array.isArray(scheme) ? scheme : [scheme];
+      const newJsonSpec = Object.assign({}, jsonSpec, { schemes });
+
+      return system.specActions.updateJsonSpec(newJsonSpec);
+    },
+    setHost: (host) => {
+      const jsonSpec = system.getState().toJSON().spec.json;
+      const newJsonSpec = Object.assign({}, jsonSpec, { host });
+
+      return system.specActions.updateJsonSpec(newJsonSpec);
+    },
+    setBasePath: (basePath) => {
+      const jsonSpec = system.getState().toJSON().spec.json;
+      const newJsonSpec = Object.assign({}, jsonSpec, { basePath });
+
+      return system.specActions.updateJsonSpec(newJsonSpec);
+    }
+  }
+});
+  window.onload = () => {
+    const basePath = window.location.pathname.substring(0, window.location.pathname.indexOf('/static/'));
+    window.ui = SwaggerUIBundle({
+      url: './swagger.yaml',
+      dom_id: '#swagger-ui',
+      host: window.location.host,
+      plugins: [
+        UrlMutatorPlugin,
+      ],
+      onComplete: () => {
+        window.ui.setBasePath(basePath);
+      }
+    });
+  };
+</script>
+</body>
+</html>

@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	userv1 "github.com/wyubin/ex-mcp/api-grpc/src/gen/user/v1"
 	"github.com/wyubin/ex-mcp/api-grpc/src/svc"
@@ -52,6 +55,12 @@ func main() {
 	// 包一層 /api router
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/api/", http.StripPrefix("/api", mux))
+
+	// add static
+	wd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	fmt.Printf("current pwd: %s\n", wd)
+	fs := http.FileServer(http.Dir(filepath.Join(wd, "static")))
+	httpMux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// 啟動 HTTP Gateway server（port: 8080）
 	log.Println("🌐 HTTP Gateway listening on :8080")
