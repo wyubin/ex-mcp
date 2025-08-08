@@ -11,3 +11,10 @@
 # gateway
 `buf.build/grpc-ecosystem/gateway` 會建立 *.pb.gw.go, 提供 RegisterUserServiceHandlerServer, 可以把 implSvc 跟 gateway route 接在一起，之後這個route 可以再往上接到 main http route
 - `RegisterUserServiceHandlerServer` 並沒有另外建立 grpc client 再打 grpc server, 
+
+# connect-go
+- Pros:
+  - connect-go 可以同時用單一 port 服務 http protocol 跟 grpc, 而且因為 http protocol 會直接走到 connect 內部轉換，所以會稍微低一點(但 gateway 也可以直接內部轉沒有外轉另一個 port, 有可能差不多)
+- Cons:
+  - svcImpl interface 與 grpc 不同，會需要另外再寫一個類似實作的服務或是 adaptor, 會有點麻煩
+  - buf.gen.yaml 本來的 openapi 轉出的 swagger 並不會透過 connect 的 request/response 去轉換，要額外寫
