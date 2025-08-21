@@ -30,7 +30,9 @@ buf generate
 - buf.gen.yaml 中 plugins 的設定可以直接去看 remote 的 src code, opt 下面通常會是 plugins 的 main 的 flags
 
 # swagger
-需要考慮如何從 proto 到產生swagger json 的流程
+需要考慮如何從 proto 到產生swagger json 的流程，會需要做以下步驟
+- 在 buf lib 會自動產生 yaml
+- 在 makefile 裡面，可以針對不同 service 把相關的 yaml 做 merge, 然後放到 swagger dir 就可以
 
 # build
 ```shell
