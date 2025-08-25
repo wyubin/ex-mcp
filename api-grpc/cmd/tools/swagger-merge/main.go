@@ -6,51 +6,41 @@ import (
 	"sort"
 
 	"github.com/spf13/cobra"
+	"github.com/wyubin/ex-mcp/api-grpc/src/utils/maptool"
 	"gopkg.in/yaml.v3"
 )
+
+var orderKey = []string{"swagger", "info", "host", "basePath", "schemes", "consumes", "produces", "tags", "paths", "definitions"}
 
 func mergeSwagger(docs ...map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	for _, doc := range docs {
 		for k, v := range doc {
-			if existing, ok := result[k]; ok {
-				switch k {
-				case "paths", "definitions":
-					// merge map[string]interface{}
-					if em, ok := existing.(map[string]interface{}); ok {
-						if vm, ok := v.(map[string]interface{}); ok {
-							for kk, vv := range vm {
-								em[kk] = vv
-							}
-						}
-						// 排序 map
-						result[k] = sortMap(em)
-					}
-				case "tags":
-					// 去重後合併 tags
-					if es, ok := existing.([]interface{}); ok {
-						if vs, ok := v.([]interface{}); ok {
-							merged := dedupTags(append(es, vs...))
-							result[k] = sortTags(merged)
-						}
-					}
-				default:
-					// overwrite
-					result[k] = v
+			existData, exists := result[k]
+			switch k {
+			case "paths", "definitions":
+				em := maptool.NewOrderedMap[any]()
+				if exists { // 已存在前一個 yaml 資料
+					em = existData.(maptool.OrderedMap[any])
 				}
-			} else {
-				switch k {
-				case "paths", "definitions":
-					if vm, ok := v.(map[string]interface{}); ok {
-						result[k] = sortMap(vm)
-						continue
-					}
-				case "tags":
-					if vs, ok := v.([]interface{}); ok {
-						result[k] = sortTags(vs)
-						continue
+				if vm, ok := v.(map[string]interface{}); ok { // 把每個 item 塞入
+					for kk, vv := range vm {
+						em.Append(kk, vv)
 					}
 				}
+				em.OrderBy()
+				result[k] = em
+			case "tags":
+				es := []interface{}{}
+				if exists { // 已存在前一個 yaml 資料
+					es = existData.([]interface{})
+				}
+				// 去重後合併 tags
+				if vs, ok := v.([]interface{}); ok {
+					result[k] = sortTags(dedupTags(append(es, vs...)))
+				}
+			default:
+				// overwrite
 				result[k] = v
 			}
 		}
@@ -95,21 +85,6 @@ func sortTags(tags []interface{}) []interface{} {
 	return tags
 }
 
-// sortMap 把 map[string]interface{} 的 key 排序
-func sortMap(m map[string]interface{}) map[string]interface{} {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	newMap := make(map[string]interface{}, len(m))
-	for _, k := range keys {
-		newMap[k] = m[k]
-	}
-	return newMap
-}
-
 func main() {
 	var output string
 
@@ -127,16 +102,21 @@ func main() {
 			for _, f := range args {
 				data, err := os.ReadFile(f)
 				if err != nil {
-					return fmt.Errorf("failed to read file %s: %w", f, err)
+					fmt.Fprintf(os.Stderr, "failed to read file %s: %s", f, err)
+					continue
 				}
 				var m map[string]interface{}
 				if err := yaml.Unmarshal(data, &m); err != nil {
-					return fmt.Errorf("failed to parse yaml %s: %w", f, err)
+					fmt.Fprintf(os.Stderr, "failed to parse yaml %s: %s", f, err)
+					continue
 				}
 				docs = append(docs, m)
 			}
-
-			merged := mergeSwagger(docs...)
+			merged := maptool.NewOrderedMap[any]()
+			for k, v := range mergeSwagger(docs...) {
+				merged.Append(k, v)
+			}
+			merged.OrderBy(orderKey...)
 
 			out, err := yaml.Marshal(merged)
 			if err != nil {
