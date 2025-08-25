@@ -44,7 +44,7 @@ DESTDIR=/var/local NAME=user make svc
 /var/local/apisvc
 # swagger: http://localhost:8080/static/docs.html
 # for example create a user
-curl -X POST http://localhost:8080/api/user.UserService/CreateUser \
+curl -X POST http://localhost:8080/user.UserService/CreateUser \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "email": "alice@example.com"}'
 ```

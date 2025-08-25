@@ -3,7 +3,6 @@ MODBASE = multiple.api
 NAME ?= ex
 GIT_COMMIT:=$(shell git rev-parse --short HEAD)
 BUILD_DATE:=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-VERSION:=$(shell git describe --tags --abbrev=0 --match "svc-$(NAME)*" | tr -d '\n')
 
 ##
 ## pos-relay Makefile help
@@ -19,6 +18,7 @@ help: 			## Show this help
 
 .PHONY: svc
 svc:
+	VERSION=$(shell git describe --tags --abbrev=0 --match "svc-$(NAME)*" 2>/dev/null || echo "v0.0.0")
 	mkdir -p $(DESTDIR)/static
 	go build -o $(DESTDIR)/apisvc \
 	-ldflags=" \

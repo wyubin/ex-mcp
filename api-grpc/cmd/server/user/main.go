@@ -55,7 +55,7 @@ func main() {
 	// 包一層 /api router
 	httpMux := http.NewServeMux()
 	// httpMux.Handle("/api/", http.StripPrefix("/api", mux))
-	httpMux.Handle("/", http.StripPrefix("/api", mux))
+	httpMux.Handle("/", mux)
 
 	// add static
 	wd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
