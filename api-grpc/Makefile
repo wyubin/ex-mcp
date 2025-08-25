@@ -27,4 +27,4 @@ svc:
 	-X $(MODBASE)/utils/version.buildDate=$(BUILD_DATE) \
 	" cmd/server/$(NAME)/main.go
 	cp static/swagger/* $(DESTDIR)/static/
-	cp src/gen/api.swagger.yaml $(DESTDIR)/static/swagger.yaml
+	go run cmd/tools/swagger-merge/main.go merge src/gen/$(NAME)/*/*.yaml -o $(DESTDIR)/static/swagger.yaml

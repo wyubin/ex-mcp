@@ -96,7 +96,7 @@ func main() {
 	mergeCmd := &cobra.Command{
 		Use:   "merge [files...]",
 		Short: "Merge multiple swagger yaml files",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var docs []map[string]interface{}
 			for _, f := range args {
