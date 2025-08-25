@@ -1,0 +1,39 @@
+version: "3.9"
+
+networks:
+  backend:
+    driver: bridge
+
+services:
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "50051:50051"
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user.rule=PathPrefix(`/user`)"
+      - "traefik.http.routers.user.entrypoints=web"
+      - "traefik.http.routers.user.middlewares=usergateway@plugin"
+
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--providers.docker=true"
+      - "--api.dashboard=true"
+      - "--log.level=DEBUG"
+      - "--pilot.token=YOUR_TRAEFIK_PILOT_TOKEN"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-user-plugin:/plugins
+    networks:
+      - backend
+    environment:
+      - "USERGATEWAY_GRPCADDR=user-service:50051"
