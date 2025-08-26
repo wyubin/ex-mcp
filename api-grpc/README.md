@@ -26,6 +26,14 @@ buf dep update
 buf generate
 ```
 
+### grpcurl
+```shell
+cd /tmp
+curl -L -O https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz
+tar -zxvf grpcurl_1.9.3_linux_x86_64.tar.gz
+mv grpcurl /usr/local/bin/
+```
+
 # buf
 - buf.gen.yaml 中 plugins 的設定可以直接去看 remote 的 src code, opt 下面通常會是 plugins 的 main 的 flags
 
@@ -47,4 +55,10 @@ DESTDIR=/var/local NAME=user make svc
 curl -X POST http://localhost:8080/user.UserService/CreateUser \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "email": "alice@example.com"}'
+
+grpcurl \
+  -plaintext \
+  -d '{"name": "Alice", "email": "alice@example.com"}' \
+  localhost:50051 \
+  user.UserService/CreateUser
 ```

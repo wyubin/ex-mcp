@@ -14,6 +14,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	// 建立 gRPC server
 	grpcServer := grpc.NewServer()
 	userv1.RegisterUserServiceServer(grpcServer, userSvc)
+	reflection.Register(grpcServer)
 
 	// 啟動 gRPC server（port: 50051）
 	go func() {

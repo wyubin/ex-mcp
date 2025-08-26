@@ -18,5 +18,10 @@
 				"golang.go"
 			]
 		}
+	},
+	"portsAttributes": {
+		"8080": {
+			"label": "8080:8081"
+		}
 	}
 }

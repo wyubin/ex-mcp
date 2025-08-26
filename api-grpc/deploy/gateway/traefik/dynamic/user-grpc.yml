@@ -1,0 +1,12 @@
+http:
+  routers:
+    user-grpc:
+      rule: "PathPrefix(`/user`)"
+      service: user-grpc-svc
+
+  services:
+    user-grpc-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8081"
+        passHostHeader: true

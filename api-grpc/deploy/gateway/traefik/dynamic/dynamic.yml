@@ -1,0 +1,11 @@
+http:
+  routers:
+    hello:
+      rule: "PathPrefix(`/hello`)"
+      service: hello-service
+
+  services:
+    hello-service:
+      loadBalancer:
+        servers:
+          - url: "http://example.com"
