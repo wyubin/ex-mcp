@@ -10,8 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-
-	userpb "github.com/wyubin/ex-mcp/api-grpc/src/gen/user/v1"
 )
 
 type Config struct {
@@ -26,7 +24,7 @@ func CreateConfig() *Config {
 
 type UserGateway struct {
 	next   http.Handler
-	client userpb.UserServiceClient
+	client UserServiceClient
 	mux    *http.ServeMux
 }
 
@@ -42,7 +40,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		return nil, err
 	}
 
-	client := userpb.NewUserServiceClient(conn)
+	client := NewUserServiceClient(conn)
 	mux := http.NewServeMux()
 
 	g := &UserGateway{
@@ -71,7 +69,7 @@ func (p *UserGateway) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 // ---------------- Handlers ----------------
 
 func (p *UserGateway) handleCreateUser(rw http.ResponseWriter, req *http.Request) {
-	var createReq userpb.CreateUserRequest
+	var createReq CreateUserRequest
 	if err := json.NewDecoder(req.Body).Decode(&createReq); err != nil {
 		http.Error(rw, "invalid request body: "+err.Error(), http.StatusBadRequest)
 		return
@@ -82,7 +80,7 @@ func (p *UserGateway) handleCreateUser(rw http.ResponseWriter, req *http.Request
 }
 
 func (p *UserGateway) handleListUsers(rw http.ResponseWriter, req *http.Request) {
-	resp, err := p.client.ListUsers(req.Context(), &userpb.ListUsersRequest{})
+	resp, err := p.client.ListUsers(req.Context(), &ListUsersRequest{})
 	writeResponse(rw, resp, err)
 }
 
@@ -93,7 +91,7 @@ func (p *UserGateway) handleGetUsers(rw http.ResponseWriter, req *http.Request) 
 		json.NewEncoder(rw).Encode(map[string]string{"error": "missing id field"})
 		return
 	}
-	resp, err := p.client.GetUser(req.Context(), &userpb.GetUserRequest{Id: id})
+	resp, err := p.client.GetUser(req.Context(), &GetUserRequest{Id: id})
 	writeResponse(rw, resp, err)
 }
 
@@ -104,7 +102,7 @@ func (p *UserGateway) handleDeleteUser(rw http.ResponseWriter, req *http.Request
 		json.NewEncoder(rw).Encode(map[string]string{"error": "missing id field"})
 		return
 	}
-	resp, err := p.client.DeleteUser(req.Context(), &userpb.DeleteUserRequest{Id: id})
+	resp, err := p.client.DeleteUser(req.Context(), &DeleteUserRequest{Id: id})
 	writeResponse(rw, resp, err)
 }
 

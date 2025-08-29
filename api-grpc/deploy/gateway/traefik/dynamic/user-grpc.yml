@@ -1,12 +1,11 @@
 http:
   routers:
-    user-grpc:
-      rule: "PathPrefix(`/user`)"
-      service: user-grpc-svc
+    user:
+      rule: "PathPrefix(`/user/v1`)"
+      service: user-service
 
   services:
-    user-grpc-svc:
-      loadBalancer:
-        servers:
-          - url: "http://host.docker.internal:8081"
-        passHostHeader: true
+    user-service:
+      plugin:
+        user:
+          grpcAddr: "host.docker.internal:50051"

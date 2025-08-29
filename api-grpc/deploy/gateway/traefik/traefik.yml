@@ -9,3 +9,8 @@ providers:
 
 api:
   insecure: true
+
+experimental:
+  localPlugins:
+    user:
+      moduleName: github.com/plugin/user

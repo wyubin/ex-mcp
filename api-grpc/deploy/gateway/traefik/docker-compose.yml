@@ -10,3 +10,4 @@ services:
     volumes:
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
+      - ./plugins:/plugins-local:ro
