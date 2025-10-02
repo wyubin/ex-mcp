@@ -10,3 +10,13 @@ docker-compose up
 # 如果有重新 compile wasm, restart
 docker-compose restart
 ```
+
+# learn
+## use grpc_json_transcoder
+使用 grpc_json_transcoder 直接把 http json 制式化轉成 grpc request
+```shell
+# 轉出 user.pb
+buf build --path src/proto/user \
+ -o deploy/gateway/envoy/wasm-plugin/plugin/grpc/user.pb
+
+```

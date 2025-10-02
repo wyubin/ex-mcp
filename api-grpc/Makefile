@@ -25,6 +25,6 @@ svc:
 	-X $(MODBASE)/utils/version.gitVersion=$(VERSION) \
 	-X $(MODBASE)/utils/version.gitCommit=$(GIT_COMMIT) \
 	-X $(MODBASE)/utils/version.buildDate=$(BUILD_DATE) \
-	" cmd/server/$(NAME)/main.go
+	" cmd/grpc/$(NAME)/main.go
 	cp static/swagger/* $(DESTDIR)/static/
 	go run cmd/tools/swagger-merge/main.go merge src/gen/$(NAME)/*/*.yaml -o $(DESTDIR)/static/swagger.yaml

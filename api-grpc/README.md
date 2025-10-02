@@ -44,6 +44,9 @@ mv grpcurl /usr/local/bin/
 
 # build
 ```shell
+# init and download pkg
+go mod init github.com/wyubin/ex-mcp/api-grpc
+go mod tidy
 DESTDIR=/var/local NAME=user make svc
 ```
 

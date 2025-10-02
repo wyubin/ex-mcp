@@ -6,6 +6,6 @@ services:
       - "18000:18000"
       - "8001:8001"
     volumes:
-      - ./main.wasm:/etc/envoy/main.wasm:ro
+      - ./plugins:/etc/envoy/plugins:ro
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
     command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
