@@ -44,8 +44,32 @@ message DeleteUserRequest {
 message DeleteUserResponse {}
 
 service UserService {
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // 建立使用者 (POST /v1/users)
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+
+  // 取得單一使用者 (GET /v1/users/{id})
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+  }
+
+  // 列出所有使用者 (GET /v1/users)
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+  }
+
+  // 刪除使用者 (DELETE /v1/users/{id})
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete: "/v1/users/{id}"
+    };
+  }
 }
