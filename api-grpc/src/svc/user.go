@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -36,6 +37,8 @@ func (s *UserService) CreateUser(ctx context.Context, req *userv1.CreateUserRequ
 	}
 	s.users[id] = user
 
+	jsonReq, _ := json.Marshal(req)
+	fmt.Printf("req: %s\n", jsonReq)
 	return &userv1.CreateUserResponse{User: user}, nil
 }
 
