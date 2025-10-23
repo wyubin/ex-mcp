@@ -100,6 +100,8 @@ func (ctx *setBodyContext) OnHttpRequestBody(bodySize int, endOfStream bool) typ
 		return types.ActionContinue
 	}
 
+	proxywasm.LogInfof("[plugin] OnHttpRequestBody → received chunk, size=%d, endOfStream=%s", bodySize, endOfStream)
+
 	if !endOfStream {
 		// Wait until we see the entire body to replace.
 		return types.ActionPause
@@ -147,6 +149,8 @@ func (ctx *setBodyContext) OnHttpResponseBody(bodySize int, endOfStream bool) ty
 		return types.ActionContinue
 	}
 
+	proxywasm.LogInfof("[plugin] OnHttpResponseBody → received chunk, size=%d, endOfStream=%s", bodySize, endOfStream)
+
 	if !endOfStream {
 		// Wait until we see the entire body to replace.
 		return types.ActionPause
@@ -185,6 +189,8 @@ type echoBodyContext struct {
 // OnHttpRequestBody implements types.HttpContext.
 func (ctx *echoBodyContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
 	ctx.totalRequestBodySize = bodySize
+
+	proxywasm.LogInfof("[plugin] OnHttpRequestBody of echoBodyContext → received chunk, size=%d, endOfStream=%s", bodySize, endOfStream)
 	if !endOfStream {
 		// Wait until we see the entire body to replace.
 		return types.ActionPause

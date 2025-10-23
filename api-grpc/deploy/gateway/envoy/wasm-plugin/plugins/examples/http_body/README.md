@@ -36,6 +36,27 @@ Envoy (Request)
 
 ```
 
+## learn
+- 在 pluginContext 中 OnPluginStart -> NewHttpContext
+- 在 OnHttpRequestHeaders
+  - 通常 不會檢查 endOfStream
+  - `GetHttpRequestHeader("buffer-replace-at")` 確定是否在 OnHttpResponseBody 才改回應
+  - 中會先 RemoveHttpRequestHeader("content-length") 來避免在 OnHttpRequestBody 中修改 RequestBody(ex. proxywasm.ReplaceHttpRequestBody) 造成 Error
+  - 用 GetHttpRequestHeader("buffer-operation") 先設定 bufferOperation
+- OnHttpRequestBody
+  - 用 ctx.bufferOperation 來決定 如何更新 RequestBody
+  - 會在 endOfStream 之後一次 `proxywasm.GetHttpRequestBody(0, bodySize)` 拿到全部 body, 然後再進行 revise body
+- OnHttpResponseHeaders
+  - 一樣沒有 endOfStream 確認，預設會修改 body, 所以先 `RemoveHttpResponseHeader("content-length")`
+- OnHttpResponseBody
+  - 跟 OnHttpRequestBody 類似操作
+- echoBodyContext
+  - 在 `OnHttpRequestBody` 中 直接 `GetHttpRequestBody(0, bodySize)`, 然後直送 `SendHttpResponse(200, nil, body, -1)`, 但之後會用 `types.ActionPause` 結束資料傳遞
+
+結論
+- 如果要改 RequestBody/ResponseBody, 要在 header 先 remove "content-length"
+- 看起來好像不用在 !endOfStream 時先 get body, 等 endOfStream 再一次讀
+
 # enovy yaml structure
 ```yaml
 ┌─────────────────────┐
@@ -60,10 +81,13 @@ Envoy (Request)
    │  Envoy Listener: echo:38140  │
    │  Filter Chain:               │
    │    - http_connection_manager │
-   │    - wasm (config=echo)      │  ← main.wasm (echo 模式)
+   │    - wasm (config=echo)      │  ← main.wasm (echo 模式) (return types.ActionPause)
    │    - router                  │
    └─────────────┬────────────────┘
                  │
                  ▼
            [Cluster: admin] (port 8001)
 ```
+
+# question
+- 為什麼不直接從 set response 回去，還要多一個 echo 來接？
