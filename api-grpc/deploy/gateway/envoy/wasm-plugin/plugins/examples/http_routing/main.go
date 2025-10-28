@@ -6,6 +6,8 @@ import (
 
 	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm"
 	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/types"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func main() {}
@@ -45,7 +47,9 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	// If the configuration data is not empty, we use its value to override the routing
 	// decision for unit tests.
 	if len(data) > 0 {
-		ctx.diceOverride = uint32(data[0])
+		var cfg wrapperspb.UInt32Value
+		proto.Unmarshal(data, &cfg)
+		ctx.diceOverride = cfg.Value
 	}
 	proxywasm.LogInfof("GetPluginConfiguration: %+v\n", data)
 	proxywasm.LogInfof("ctx.diceOverride: %d\n", ctx.diceOverride)
