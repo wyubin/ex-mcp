@@ -48,6 +48,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 
 	ctx.callBack = func(numHeaders, bodySize, numTrailers int) {
 		ctx.cnt++
+		proxywasm.LogInfof("into call back")
 		proxywasm.LogInfof("called %d for contextID=%d; namePlugin=%s", ctx.cnt, ctx.contextID, namePlugin)
 		// headers, err := proxywasm.GetHttpCallResponseHeaders()
 		// if err != nil && err != types.ErrorStatusNotFound {

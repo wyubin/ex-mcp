@@ -9,7 +9,7 @@ pluginPath=$(pwd)/${pluginDir}
 docker run --rm -v ${pluginPath}:/workspace go-wasm-builder-exam
 
 # 指定資料夾來進行 envoy 服務
-FOLDER_PLUGIN=${pluginPath} docker-compose up
+FOLDER_PLUGIN=${pluginPath} ENVOY_CONCURRENCY=1 docker-compose up
 ```
 
 ## example
@@ -24,6 +24,14 @@ VMContext ──▶ PluginContext
 - OnTick: 設定時間到時，會做的事
   - 設定 headers, 然後 trigger DispatchHttpCall
   - DispatchHttpCall 是設定 打 web_service, path 是 /ok or /fail
+    - call 完 HttpCall 拿到response 才會做 call back
+    - 流程如下
+      - plugin1 connected [web_service](/ok) with stream1 -> connect pool
+      - Preparing direct_response -> async response
+      - wasm log: called 1 for contextID=1; namePlugin=plugin1
+      - plugin2 connected [web_service](/fail) with stream1 -> connect pool
+      - Preparing direct_response -> async response
+      - wasm log: called 1 for contextID=1; namePlugin=plugin2
 
 # enovy yaml structure
 ```shell

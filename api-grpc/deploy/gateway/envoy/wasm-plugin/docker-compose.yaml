@@ -7,7 +7,10 @@ services:
       - "8001:8001"
     environment:
       - FOLDER_PLUGIN=./default-plugin  # 指定要 mount 的資料夾
+      - ENVOY_CONCURRENCY=2 # worker 數目
     volumes:
       - ${FOLDER_PLUGIN}:/etc/envoy/plugin:ro       # 將整個資料夾掛進去
       - ${FOLDER_PLUGIN}/envoy.yaml:/etc/envoy/envoy.yaml:ro  # 將 envoy.yaml 掛到預設位置
-    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "envoy -c /etc/envoy/envoy.yaml --log-level debug --concurrency ${ENVOY_CONCURRENCY:-2}"
