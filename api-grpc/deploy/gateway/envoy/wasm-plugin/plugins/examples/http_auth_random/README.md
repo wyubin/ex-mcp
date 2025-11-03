@@ -14,7 +14,7 @@ FOLDER_PLUGIN=${pluginPath} ENVOY_CONCURRENCY=1 docker-compose up
 ```
 
 ## example
-- 試著打 `localhost:18000/uuid` 到目標位置
+- 試著打 `localhost:18000/uuid` 到目標位置, 
 ```shell
 curl localhost:18000/uuid -v
 ```
