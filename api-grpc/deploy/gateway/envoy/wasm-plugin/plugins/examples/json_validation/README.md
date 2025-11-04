@@ -4,7 +4,7 @@
 ## setup
 ```shell
 # 指定資料夾進行compile
-pluginDir=plugins/examples/http_headers
+pluginDir=plugins/examples/json_validation
 pluginPath=$(pwd)/${pluginDir}
 docker run --rm -v ${pluginPath}:/workspace go-wasm-builder-exam
 
@@ -15,24 +15,23 @@ FOLDER_PLUGIN=${pluginPath} ENVOY_CONCURRENCY=1 docker-compose up
 ## example
 - 先準備一堆大檔案到 /tmp/file.txt, 然後送給 localhost:18000 進行處理
 ```shell
-curl 'localhost:18000' -v
-# 會有預設 header, x-proxy-wasm-go-sdk-example/x-wasm-header 則是設定加的
-# < x-envoy-upstream-service-time: 1
+curl -X POST localhost:18000 -H 'Content-Type: application/json' --data '{"id": "xxx", "token": "xxx"}' -v
+# 收到 hello from the server
+curl -X POST localhost:18000 -H 'Content-Type: application/json' --data '{"id": "xxx"}' -v
+# invalid payload
+curl -X POST localhost:18000 --data '{"id": "xxx", "token": "xxx"}' -v
+# content-type must be provided
 ```
 
 # main.go structure
 PluginContext ──▶ HttpContext
 pluginContext
-- NewHttpContext: 會把 contextId 跟設定的 header name/value 寫到 HttpContext
-- OnPluginStart: 進行以下處理，如果error 會 return OnPluginStartStatusFailed
-  - config == nil 直接 OnPluginStartStatusOK, headerName/headerValue 就維持空值
-  - 將設定 decode 為 PluginConfig
-  - 設定 headerName/headerValue, 如果有空值就 fail
-- 附註: 將原本的 gjson 改寫成 原生 json 套件
+- GetPluginConfiguration -> parse config
 
 HttpContext
-- OnHttpRequestHeaders: (其實沒有具體操作) 簡單加上 `test` header 並 log  request headers
-- OnHttpResponseHeaders: 在 target response 後, 加上 x-proxy-wasm-go-sdk-example 跟設定的 header
+- OnHttpRequestHeaders: 有檢查 content-type 要是 `application/json`
+- OnHttpRequestBody: bodySize 應該就等於已讀進來的 body length, 不需要 totalRequestBodySize 做累加, 直到 endOfStream 再 GetHttpRequestBody 就可以
+  - validatePayload 把 body 轉成 map[string]any 再檢查 keys 就結束
 
 # enovy yaml structure
 ```shell
