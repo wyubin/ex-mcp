@@ -1,10 +1,10 @@
 # intro
-學習如何用 在envoy 中 做多個 dispatches,, 並先 puase 在正確都收到後才進行 response
+- 學習如何用 在envoy 中 做多個 dispatches, 並先 puase 在正確都收到後才進行 response
+- 掌握 SetEffectiveContext 跟 ResumeHttpRequest 的機制
 
 # setup and config
 - 設定包含以下
-  - dispatchCluster[string]: 設定做 dispatch 的 clusterName
-  - dispatchCount[int]: 會發出設定數目的dispatch
+  - tickPeriod[uint32]: tick 啟動的間距
 
 compile and run
 ```shell
