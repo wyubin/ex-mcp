@@ -21,13 +21,15 @@ FOLDER_PLUGIN=${pluginPath} ENVOY_CONCURRENCY=1 docker-compose up
 ```shell
 # 在 curl 回覆中附加 header
 curl --head localhost:18000 --data '[initial body]'
+
+curl -s 'localhost:8001/stats/prometheus'| grep connection_counter
 ```
 
 # main.go structure
 這裡用一個更低階的 context 類型: TcpContext
 PluginContext ──▶ TcpContext
 pluginContext: 設定好counter 給 TcpContext 用
-- NewTcpContext: 解析 pluginContext 並存到 config
+- NewTcpContext: 目前看起來 TcpContext 定義 counter 是有效果的
 
 TcpContext: 直接實作了 interface 中幾個 func
 - onNewConnection: downstream 建立連線時
