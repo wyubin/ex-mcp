@@ -14,18 +14,15 @@ import (
 	userpb "main/proto"
 )
 
+const (
+	timeOutDispatch = 5000
+)
+
 func main() {}
 func init() {
-	proxywasm.SetVMContext(&vmContext{})
-}
-
-// --- VM Context ---
-type vmContext struct {
-	types.DefaultVMContext
-}
-
-func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
-	return &pluginContext{}
+	proxywasm.SetPluginContext(func(contextID uint32) types.PluginContext {
+		return &pluginContext{}
+	})
 }
 
 type pluginContext struct {
@@ -42,8 +39,7 @@ type httpContext struct {
 	contextID  uint32
 	grpcPath   string
 	pathParams map[string]string
-
-	respBuffer []byte
+	remoteBody []byte
 }
 
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
@@ -58,15 +54,19 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	ctx.grpcPath, ctx.pathParams = http2grpcMapping(method, path)
 
 	// 替換 header → gRPC
-	proxywasm.ReplaceHttpRequestHeader(":path", ctx.grpcPath)
-	proxywasm.ReplaceHttpRequestHeader(":method", "POST")
-	proxywasm.ReplaceHttpRequestHeader("content-type", "application/grpc")
+	// proxywasm.ReplaceHttpRequestHeader(":path", ctx.grpcPath)
+	// proxywasm.ReplaceHttpRequestHeader(":method", "POST")
+	// proxywasm.ReplaceHttpRequestHeader("content-type", "application/grpc")
+	// if err := proxywasm.RemoveHttpRequestHeader("content-length"); err != nil {
+	// 	panic(err)
+	// }
 
 	proxywasm.LogInfof("[plugin] ReplaceHttpRequestHeader → ctx.grpcPath[%s]", ctx.grpcPath)
 	return types.ActionContinue
 }
 
 func (ctx *httpContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
+	proxywasm.LogInfof("[plugin] OnHttpRequestBody → received chunk, size=%d, endOfStream=%s", bodySize, endOfStream)
 	if !endOfStream {
 		return types.ActionPause
 	}
@@ -78,122 +78,70 @@ func (ctx *httpContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.
 		proxywasm.SendHttpResponse(500, nil, []byte("failed to read body"), 0)
 		return types.ActionPause
 	}
-
-	var grpcData []byte
-
-	// --- 動態 REST → gRPC 映射 ---
-	switch ctx.grpcPath {
-	// POST /v1/users → CreateUser
-	case "/user.UserService/CreateUser":
-		var req userpb.CreateUserRequest
-		if err := json.Unmarshal(body, &req); err != nil {
-			proxywasm.SendHttpResponse(400, nil, []byte("invalid JSON for CreateUser"), 0)
-			return types.ActionPause
-		}
-		grpcData, err = proto.Marshal(&req)
-		if err != nil {
-			proxywasm.SendHttpResponse(500, nil, []byte("failed to marshal gRPC request"), 0)
-			return types.ActionPause
-		}
-
-	// GET /v1/users/{id} → GetUser
-	case "/user.UserService/GetUser":
-		req := &userpb.GetUserRequest{Id: ctx.pathParams["id"]}
-		grpcData, err = proto.Marshal(req)
-		if err != nil {
-			proxywasm.SendHttpResponse(500, nil, []byte("failed to marshal gRPC request"), 0)
-			return types.ActionPause
-		}
-
-	// GET /v1/users → ListUsers
-	case "/user.UserService/ListUsers":
-		req := &userpb.ListUsersRequest{}
-		grpcData, err = proto.Marshal(req)
-		if err != nil {
-			proxywasm.SendHttpResponse(500, nil, []byte("failed to marshal gRPC request"), 0)
-			return types.ActionPause
-		}
-
-	// DELETE /v1/users/{id} → DeleteUser
-	case "/user.UserService/DeleteUser":
-		req := &userpb.DeleteUserRequest{Id: ctx.pathParams["id"]}
-		grpcData, err = proto.Marshal(req)
-		if err != nil {
-			proxywasm.SendHttpResponse(500, nil, []byte("failed to marshal gRPC request"), 0)
-			return types.ActionPause
-		}
-
-	default:
-		grpcData = body
+	grpcBody, err := genGrpcBody(ctx.grpcPath, ctx.pathParams, body)
+	if err != nil {
+		proxywasm.LogCriticalf("failed to gen grpc body: %v", err)
+		proxywasm.SendHttpResponse(500, nil, []byte("failed to gen grpc body"), 0)
+		return types.ActionPause
 	}
 
-	proxywasm.LogInfof("[plugin] OnHttpRequestBody → grpcData[%s]", grpcData)
+	proxywasm.LogInfof("[plugin] OnHttpRequestBody → grpcBody[%s]", grpcBody)
+	headers := [][2]string{
+		{":method", "POST"}, {":path", ctx.grpcPath}, {"content-type", "application/grpc"},
+	}
+	_, err = proxywasm.DispatchHttpCall("user_service", headers, grpcBody, nil, timeOutDispatch, ctx.callback)
+	if err != nil {
+		proxywasm.LogCriticalf("dipatch httpcall failed: %v", err)
+		proxywasm.SendHttpResponse(500, nil, []byte("dipatch httpcall failed"), 0)
+		return types.ActionPause
+	}
+	return types.ActionPause
+}
 
-	// 替換 body
-	proxywasm.ReplaceHttpRequestBody(grpcFrame(grpcData))
-
-	return types.ActionContinue
+func (ctx *httpContext) callback(numHeaders, bodySize, numTrailers int) {
+	bodyCB, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
+	if err != nil {
+		proxywasm.LogCriticalf("failed to get response body: %v", err)
+		_ = proxywasm.ResumeHttpRequest()
+		return
+	}
+	copy(ctx.remoteBody, bodyCB)
+	_ = proxywasm.ResumeHttpRequest()
 }
 
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
+	// check original headers
+	hs, _ := proxywasm.GetHttpResponseHeaders()
+	for _, h := range hs {
+		proxywasm.LogInfof("response header %s: %s", h[0], h[1])
+	}
 	proxywasm.ReplaceHttpResponseHeader("content-type", "application/json")
-	proxywasm.LogInfof("[plugin] gRPC headers → JSON headers")
+	proxywasm.LogInfof("[plugin] just add some header")
+	if err := proxywasm.RemoveHttpResponseHeader("content-length"); err != nil {
+		panic(err)
+	}
 	return types.ActionContinue
 }
 
 func (ctx *httpContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
-	body, err := proxywasm.GetHttpResponseBody(0, bodySize)
-	if err != nil {
-		proxywasm.LogCriticalf("[plugin] failed to get response body: %v", err)
-		return types.ActionContinue
-	}
-
-	// 累積 chunk
-	if len(body) > 0 {
-		ctx.respBuffer = append(ctx.respBuffer, body...)
-		proxywasm.LogInfof("[plugin] OnHttpResponseBody → received chunk, size=%d", len(body))
-	}
-
+	proxywasm.LogInfof("[plugin] OnHttpResponseBody → received chunk, size=%d, endOfStream=%d", bodySize, endOfStream)
 	if !endOfStream {
 		return types.ActionPause
 	}
-	// 到了 stream 結尾
-	proxywasm.LogInfof("[plugin] OnHttpResponseBody → Start!! totalSize=%d", len(ctx.respBuffer))
+	proxywasm.LogInfof("[plugin] OnHttpResponseBody → grpcData from ctx [%s]", ctx.remoteBody)
 
-	if len(ctx.respBuffer) < 5 {
-		proxywasm.LogCriticalf("[plugin] invalid gRPC response, size=%d", len(ctx.respBuffer))
-		return types.ActionContinue
+	jsonBody, err := genJsonResponseBody(ctx.grpcPath, ctx.remoteBody)
+	if err != nil {
+		proxywasm.LogCriticalf("failed to encode response: %v", err)
+		proxywasm.SendHttpResponse(500, nil, []byte("failed to encode response"), 0)
+		return types.ActionPause
 	}
+	proxywasm.ReplaceHttpResponseBody(jsonBody)
 
-	grpcPayload := ctx.respBuffer[5:]
+	return types.ActionContinue
+}
 
-	var jsonData []byte
-	switch ctx.grpcPath {
-	case "/user.UserService/CreateUser":
-		var resp userpb.CreateUserResponse
-		_ = proto.Unmarshal(grpcPayload, &resp)
-		jsonData, _ = json.Marshal(resp)
-	case "/user.UserService/GetUser":
-		var resp userpb.GetUserResponse
-		_ = proto.Unmarshal(grpcPayload, &resp)
-		jsonData, _ = json.Marshal(resp)
-	case "/user.UserService/ListUsers":
-		var resp userpb.ListUsersResponse
-		_ = proto.Unmarshal(grpcPayload, &resp)
-		jsonData, _ = json.Marshal(resp)
-	case "/user.UserService/DeleteUser":
-		var resp userpb.DeleteUserResponse
-		_ = proto.Unmarshal(grpcPayload, &resp)
-		jsonData, _ = json.Marshal(resp)
-	default:
-		jsonData = grpcPayload
-	}
-
-	proxywasm.LogInfof("[plugin] OnHttpResponseHeaders → jsonData[%s]", jsonData)
-
-	// --- 清除 gRPC trailers，確保純 JSON ---
-	proxywasm.ReplaceHttpResponseBody(jsonData)
-
+func (ctx *httpContext) OnHttpResponseTrailers(int) types.Action {
 	// 清除 gRPC trailers
 	if err := proxywasm.ReplaceHttpResponseTrailers(nil); err != nil {
 		proxywasm.LogCriticalf("[plugin] failed to clear trailers: %v", err)
@@ -239,6 +187,52 @@ func http2grpcMapping(method, path string) (string, map[string]string) {
 	return grpcPath, params
 }
 
+// genGrpcBody 基於 bodyJson 轉成 grpc body 提供remote call
+func genGrpcBody(pathGrpc string, pathParams map[string]string, bodyJson []byte) ([]byte, error) {
+	var grpcData []byte
+	var err error
+	switch pathGrpc {
+	// POST /v1/users → CreateUser
+	case "/user.UserService/CreateUser":
+		var req userpb.CreateUserRequest
+		if err := json.Unmarshal(bodyJson, &req); err != nil {
+			return nil, fmt.Errorf("invalid JSON for CreateUser\n->%w", err)
+		}
+		grpcData, err = proto.Marshal(&req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal gRPC request\n->%w", err)
+		}
+
+	// GET /v1/users/{id} → GetUser
+	case "/user.UserService/GetUser":
+		req := &userpb.GetUserRequest{Id: pathParams["id"]}
+		grpcData, err = proto.Marshal(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal gRPC request\n->%w", err)
+		}
+
+	// GET /v1/users → ListUsers
+	case "/user.UserService/ListUsers":
+		req := &userpb.ListUsersRequest{}
+		grpcData, err = proto.Marshal(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal gRPC request\n->%w", err)
+		}
+
+	// DELETE /v1/users/{id} → DeleteUser
+	case "/user.UserService/DeleteUser":
+		req := &userpb.DeleteUserRequest{Id: pathParams["id"]}
+		grpcData, err = proto.Marshal(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal gRPC request\n->%w", err)
+		}
+
+	default:
+		return nil, fmt.Errorf("no match grpc service path\n-> path: %s", pathGrpc)
+	}
+	return grpcFrame(grpcData), nil
+}
+
 // --- gRPC framing helper ---
 func grpcFrame(data []byte) []byte {
 	frame := make([]byte, 5+len(data))
@@ -246,4 +240,37 @@ func grpcFrame(data []byte) []byte {
 	binary.BigEndian.PutUint32(frame[1:5], uint32(len(data)))
 	copy(frame[5:], data)
 	return frame
+}
+
+// genJsonResponseBody 將 grpc response body 轉成 json body
+func genJsonResponseBody(pathGrpc string, bodyGrpc []byte) ([]byte, error) {
+	grpcPayload := bodyGrpc[5:]
+	var (
+		jsonData  []byte
+		errEncode error
+	)
+	switch pathGrpc {
+	case "/user.UserService/CreateUser":
+		var resp userpb.CreateUserResponse
+		errEncode = proto.Unmarshal(grpcPayload, &resp)
+		jsonData, _ = json.Marshal(&resp)
+	case "/user.UserService/GetUser":
+		var resp userpb.GetUserResponse
+		errEncode = proto.Unmarshal(grpcPayload, &resp)
+		jsonData, _ = json.Marshal(&resp)
+	case "/user.UserService/ListUsers":
+		var resp userpb.ListUsersResponse
+		errEncode = proto.Unmarshal(grpcPayload, &resp)
+		jsonData, _ = json.Marshal(&resp)
+	case "/user.UserService/DeleteUser":
+		var resp userpb.DeleteUserResponse
+		errEncode = proto.Unmarshal(grpcPayload, &resp)
+		jsonData, _ = json.Marshal(&resp)
+	default:
+		return nil, fmt.Errorf("no match grpc service path\n-> path: %s", pathGrpc)
+	}
+	if errEncode != nil {
+		return nil, fmt.Errorf("grpcBody encode error\n->%w", errEncode)
+	}
+	return jsonData, nil
 }
