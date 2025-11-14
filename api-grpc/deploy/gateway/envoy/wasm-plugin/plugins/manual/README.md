@@ -49,3 +49,8 @@ curl -X POST -v http://localhost:18000/v1/users \
   - GenHttpResponseBody[DispatchHttpCall]: 在打 grpc 之後，將其 response body 轉為預計想要的 http response body 來回應, 存到 http context
     - callback 裡面需要處理是否轉 httpBody 成功的錯誤處理, 也要處理 call grpc 的 status 來進行確認，來決定是否處理 body 及 怎麼 SendHttpResponse(有 grpc --> http status code, 並且要抓 grpc-message)
 - 在 callback 如果可以把各種狀況都 `SendHttpResponse` 的話，應該可以直接不用實作 OnHttpResponseHeaders/OnHttpResponseBody, 反正沒有要處理 admin 回傳的東西
+
+### struct
+- 以 http.ServeMux 實作一個 requestMapper
+  - New(clusterName): 設定 cluster name
+  - MatchInfo(method, path(with querystring)) (InfoRequest, error)

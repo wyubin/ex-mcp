@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	userpb "main/proto"
+	userpb "main/proto/user"
 )
 
 const (
