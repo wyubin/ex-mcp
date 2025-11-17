@@ -51,6 +51,16 @@ curl -X POST -v http://localhost:18000/v1/users \
 - 在 callback 如果可以把各種狀況都 `SendHttpResponse` 的話，應該可以直接不用實作 OnHttpResponseHeaders/OnHttpResponseBody, 反正沒有要處理 admin 回傳的東西
 
 ### struct
+最外層直接讓 main 使用的 grpcs
+- AddRoute: 將 route 加到需要掃描的 routes 中
+- Match: 輸出 InfoRequest 及對應 route, 如果route 為nil 就是沒有對到可以用的route, 直接 response 不存在
+- route 跟 info 可以直接存在http context 來進行後續動作
+內層針對每個 grpc 的實作 interface
 - 以 http.ServeMux 實作一個 requestMapper
   - New(clusterName): 設定 cluster name
   - MatchInfo(method, path(with querystring)) (InfoRequest, error)
+  - RequestBody2grpc(InfoRequest, jsonBody) ([]btye, error)
+    - endpoint 可能會需要 dto 跟實作轉成 grpc request body
+    - 這裡才真正做 field validation
+  - ResponseBody2json(InfoRequest, grpcBody) ([]btye, error)
+  - RegisterRoutes(): 將 http path 與 對應的 grpc path 跟 body converter 聯繫起來

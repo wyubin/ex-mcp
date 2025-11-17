@@ -27,6 +27,12 @@ static_resources:
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                       config:
+                        configuration:
+                            "@type": type.googleapis.com/google.protobuf.StringValue
+                            value: |
+                              {
+                                "user": "user_service"
+                              }
                         name: user_json_to_grpc
                         root_id: user_json_to_grpc
                         vm_config:
