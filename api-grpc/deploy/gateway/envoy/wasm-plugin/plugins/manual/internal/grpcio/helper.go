@@ -2,9 +2,13 @@ package grpcio
 
 import (
 	"encoding/binary"
-	"net/http"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"reflect"
 	"regexp"
+
+	"google.golang.org/protobuf/proto"
 )
 
 func extractParamkeys(pattern string) []string {
@@ -16,17 +20,6 @@ func extractParamkeys(pattern string) []string {
 		params = append(params, m[1])
 	}
 	return params
-}
-
-func mapRequestPathValue(req *http.Request, keys []string) map[string]string {
-	res := map[string]string{}
-	if keys == nil {
-		return res
-	}
-	for _, keyTmp := range keys {
-		res[keyTmp] = req.PathValue(keyTmp)
-	}
-	return res
 }
 
 // --- gRPC framing helper ---
@@ -48,4 +41,16 @@ func NewInstance(model interface{}) interface{} {
 		return reflect.New(t.Elem()).Interface()
 	}
 	return reflect.New(t).Interface()
+}
+
+// shared gRPC response -> JSON helper
+func GrpcBodyToJSON(grpcBody []byte, resp proto.Message) ([]byte, error) {
+	if len(grpcBody) < 5 {
+		return nil, errors.New("grpc body not enough")
+	}
+	payload := grpcBody[5:]
+	if err := proto.Unmarshal(payload, resp); err != nil {
+		return nil, fmt.Errorf("grpcBody encode error\n->%w", err)
+	}
+	return json.Marshal(resp)
 }

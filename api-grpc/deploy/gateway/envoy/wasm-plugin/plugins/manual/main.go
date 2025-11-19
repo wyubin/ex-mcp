@@ -58,7 +58,12 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 
 	routes := grpcio.NewRoutes()
 	for nameRoute, clusterRoute := range cfg {
+		proxywasm.LogInfof("[plugin] get config[%s: %s]", nameRoute, clusterRoute)
 		idx := slices.IndexFunc(allRoutes, func(route grpcio.Route) bool { return route.Name() == nameRoute })
+		if idx == -1 {
+			proxywasm.LogWarnf("no route found for name: %s", nameRoute)
+			continue
+		}
 		route := allRoutes[idx]
 		route.SetClusterName(clusterRoute)
 		routes.Add(route)
@@ -83,6 +88,7 @@ type httpContext struct {
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	method, _ := proxywasm.GetHttpRequestHeader(":method")
 	path, _ := proxywasm.GetHttpRequestHeader(":path")
+	proxywasm.LogInfof("get method[%s], path[%s]", method, path)
 	route, info := ctx.routes.Match(method, path)
 	if route == nil {
 		proxywasm.SendHttpResponse(500, nil, []byte("no match route"), 0)

@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"main/internal/grpcio"
 
@@ -41,17 +40,7 @@ func (s *covUserCreate) Json2Grpc(info grpcio.InfoRequest, jsonBody []byte) ([]b
 }
 
 func (s *covUserCreate) Grpc2Json(info grpcio.InfoRequest, grpcBody []byte) ([]byte, error) {
-	if len(grpcBody) < 5 {
-		return nil, errors.New("grpc body not enough")
-	}
-	grpcPayload := grpcBody[5:]
-	var resp CreateUserResponse
-	err := proto.Unmarshal(grpcPayload, &resp)
-	if err != nil {
-		return nil, fmt.Errorf("grpcBody encode error\n->%w", err)
-	}
-	jsonData, _ := json.Marshal(&resp)
-	return jsonData, nil
+	return grpcio.GrpcBodyToJSON(grpcBody, &CreateUserResponse{})
 }
 
 type covUserGet struct{}
@@ -71,15 +60,5 @@ func (s *covUserGet) Json2Grpc(info grpcio.InfoRequest, jsonBody []byte) ([]byte
 }
 
 func (s *covUserGet) Grpc2Json(info grpcio.InfoRequest, grpcBody []byte) ([]byte, error) {
-	if len(grpcBody) < 5 {
-		return nil, errors.New("grpc body not enough")
-	}
-	grpcPayload := grpcBody[5:]
-	var resp GetUserResponse
-	err := proto.Unmarshal(grpcPayload, &resp)
-	if err != nil {
-		return nil, fmt.Errorf("grpcBody encode error\n->%w", err)
-	}
-	jsonData, _ := json.Marshal(&resp)
-	return jsonData, nil
+	return grpcio.GrpcBodyToJSON(grpcBody, &GetUserResponse{})
 }

@@ -3,6 +3,48 @@
 
 # setup and config
 - 設定包含以下
+  - `pluginConfig`: JSON 格式，對應 route name 到 envoy cluster name。
+    ```json
+    {
+      "user": "user_service"
+    }
+    ```
+    - Key ("user"): 對應代碼中 `NewUserGrpcMapper("user")` 的名稱。
+    - Value ("user_service"): Envoy 中設定的 Cluster Name。
+
+# Analysis & Functionality
+本插件是一個 HTTP 轉 gRPC 的 Transcoder，主要功能是在 Envoy 層將 RESTful API 請求轉換為 gRPC 請求發送到後端服務，並將 gRPC 回應轉換回 JSON 格式回傳給客戶端。
+
+## Architecture
+- **Lifecycle (`main.go`)**:
+  - 負責插件的初始化 (`OnPluginStart`)，讀取設定並建立路由表。
+  - 處理 HTTP 請求生命週期 (`OnHttpRequestHeaders`, `OnHttpRequestBody`, `OnHttpResponseBody`)。
+  - 使用 `DispatchHttpCall` 發送 gRPC 請求。
+- **Routing (`internal/grpcio`)**:
+  - `RequestMapper`: 核心路由邏輯。
+  - 支援 Regex 路徑比對 (e.g., `/v1/user/{id}`)。
+  - 自動提取路徑參數 (`PathParams`) 和 Query String。
+- **Protocol Conversion (`proto/`)**:
+  - 針對個別服務 (e.g., `user`) 實作具體的轉換邏輯。
+  - `Json2Grpc`: JSON Body -> gRPC Protobuf Binary。
+  - `Grpc2Json`: gRPC Protobuf Binary -> JSON Body。
+
+## Workflow
+1. **Request Matching (`OnHttpRequestHeaders`)**:
+   - 攔截 HTTP Header，比對 Method 和 Path。
+   - 找到對應的 `Route` 和提取參數 (`InfoRequest`)。
+2. **Request Transcoding (`OnHttpRequestBody`)**:
+   - 讀取完整 HTTP Body。
+   - 呼叫 `RequestCov` 將 JSON 轉為 gRPC Binary。
+   - 構造 gRPC Header (`:method`, `:path`, `content-type`)。
+   - `DispatchHttpCall` 發送請求到後端 gRPC Cluster。
+3. **Response Handling (`callback`)**:
+   - 接收 gRPC 回應，暫存 Body 到 `ctx.remoteBody`。
+   - 恢復原始請求處理 (`ResumeHttpRequest`)。
+4. **Response Transcoding (`OnHttpResponseHeaders` / `OnHttpResponseBody`)**:
+   - 修改 Response Header (`content-type: application/json`, `status: 200`)。
+   - 呼叫 `ResponseCov` 將 gRPC Binary 轉回 JSON。
+   - 替換 Response Body (`ReplaceHttpResponseBody`)。
 
 compile and run
 ```shell

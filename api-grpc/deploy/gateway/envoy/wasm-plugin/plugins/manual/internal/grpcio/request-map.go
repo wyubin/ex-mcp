@@ -1,11 +1,9 @@
 package grpcio
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
+	"net/url"
+	"regexp"
 )
 
 type Route interface {
@@ -19,14 +17,23 @@ type Route interface {
 type RequestMapper struct {
 	name        string
 	clusterName string
-	mux         *http.ServeMux
+	entries     []routeEntry
 	path2Cov    map[string]BodyCov
+}
+
+type routeEntry struct {
+	method   string
+	pattern  string
+	regex    *regexp.Regexp
+	keys     []string
+	grpcPath string
+	cov      BodyCov
 }
 
 func NewRequestMapper(name string) *RequestMapper {
 	return &RequestMapper{
 		name:     name,
-		mux:      http.NewServeMux(),
+		entries:  []routeEntry{},
 		path2Cov: map[string]BodyCov{},
 	}
 }
@@ -47,20 +54,64 @@ func (s *RequestMapper) Name() string {
 }
 
 func (s *RequestMapper) Register(pattern, grpcPath string, converter BodyCov) {
-	s.mux.HandleFunc(pattern, s.handle(grpcPath))
+	// pattern can be like "GET /v1/user/{id}" or just "/v1/user/{id}"
+	method := ""
+	pathPattern := pattern
+	if p := regexp.MustCompile(`^[A-Z]+\s+`).FindString(pattern); p != "" {
+		method = p[:len(p)-1]
+		pathPattern = pattern[len(p):]
+	}
+
+	keys := extractParamkeys(pathPattern)
+	re := compilePatternToRegex(pathPattern)
+
+	s.entries = append(s.entries, routeEntry{
+		method:   method,
+		pattern:  pathPattern,
+		regex:    re,
+		keys:     keys,
+		grpcPath: grpcPath,
+		cov:      converter,
+	})
 	s.path2Cov[grpcPath] = converter
 }
 
 func (s *RequestMapper) MatchInfo(method, path string) (InfoRequest, error) {
-	req := httptest.NewRequest(method, path, nil)
-	w := httptest.NewRecorder()
-	s.mux.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		return InfoRequest{}, errors.New(w.Body.String())
+	// path may include query string; parse it
+	u, err := url.Parse(path)
+	if err != nil {
+		return InfoRequest{}, fmt.Errorf("invalid path: %w", err)
 	}
-	var res InfoRequest
-	json.Unmarshal(w.Body.Bytes(), &res)
-	return res, nil
+
+	for _, e := range s.entries {
+		if e.method != "" && e.method != method {
+			continue
+		}
+		if !e.regex.MatchString(u.Path) {
+			continue
+		}
+		matches := e.regex.FindStringSubmatch(u.Path)
+		params := map[string]string{}
+		if len(e.keys) > 0 {
+			for i, k := range e.keys {
+				// first submatch is at index 1
+				if i+1 < len(matches) {
+					params[k] = matches[i+1]
+				} else {
+					params[k] = ""
+				}
+			}
+		}
+
+		info := InfoRequest{
+			ClusterName: s.clusterName,
+			PathGrpc:    e.grpcPath,
+			PathParams:  params,
+			Query:       u.Query(),
+		}
+		return info, nil
+	}
+	return InfoRequest{}, fmt.Errorf("no route match for %s %s", method, path)
 }
 
 func (s *RequestMapper) RequestCov(info InfoRequest, jsonBody []byte) ([]byte, error) {
@@ -80,35 +131,13 @@ func (s *RequestMapper) ResponseCov(info InfoRequest, grpcBody []byte) ([]byte, 
 }
 
 // -- private method --  //
-func (s *RequestMapper) handle(pathGrpc string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		info, err := s.ctxUpdateParamkeys(r, pathGrpc)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-		}
-		infoByte, err := json.Marshal(info)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-		}
-		w.Write(infoByte)
-	}
-}
-
-func (s *RequestMapper) ctxUpdateParamkeys(req *http.Request, pathGrpc string) (InfoRequest, error) {
-	// get pattern and parse keys
-	handler, pattern := s.mux.Handler(req)
-	if handler == nil {
-		return InfoRequest{}, fmt.Errorf("no route match for %s %s", req.Method, req.URL.Path)
-	}
-	paramKeys := extractParamkeys(pattern)
-	info := InfoRequest{
-		ClusterName: s.clusterName,
-		PathGrpc:    pathGrpc,
-		PathParams:  mapRequestPathValue(req, paramKeys),
-		Query:       req.URL.Query(),
-	}
-
-	return info, nil
+// compilePatternToRegex transforms patterns like "/v1/user/{id}" into
+// regular expressions capturing param values in the same order as extractParamkeys.
+func compilePatternToRegex(pattern string) *regexp.Regexp {
+	re := regexp.MustCompile(`\{([^}]+)\}`)
+	// replace each {param} with a capture group matching non-slash chars
+	regexStr := re.ReplaceAllString(pattern, `([^/]+)`)
+	// ensure full match
+	regexStr = "^" + regexStr + "$"
+	return regexp.MustCompile(regexStr)
 }

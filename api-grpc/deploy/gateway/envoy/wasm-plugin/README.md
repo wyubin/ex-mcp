@@ -28,7 +28,7 @@ buf build --path src/proto/user \
 # 並加入對應設定檔 並啟動 docker compose
 
 # test (需要在 proto 加上 option(api) 設定)
-curl -X POST -v http://localhost:18000/v1/users \
+curl -X POST -v http://localhost:18000/v1/user \
   -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@example.com"}'
 ```
